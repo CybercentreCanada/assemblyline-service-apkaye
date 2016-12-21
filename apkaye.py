@@ -6,7 +6,7 @@ from assemblyline.common.charset import safe_str
 from assemblyline.common.net import is_valid_domain, is_valid_ip, is_valid_email
 from assemblyline.al.common.heuristics import Heuristic
 from assemblyline.al.common.result import Result, ResultSection, SCORE, TEXT_FORMAT, TAG_TYPE, TAG_WEIGHT
-from assemblyline.al.service.apkaye.static import ALL_ANDROID_PERMISSIONS, ISO_LOCALES
+from al_services.alsvc_apkaye.static import ALL_ANDROID_PERMISSIONS, ISO_LOCALES
 from assemblyline.al.service.base import ServiceBase
 
 
