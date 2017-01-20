@@ -4,7 +4,7 @@ This Assemblyline service analyzes Android APKs. APKs are decompiled and inspect
 
 **NOTE**: This service does not require you to buy any licence and is preinstalled and working after a default installation
 
-## Tools wrapped
+## Execution
 
 APKaye use the following 3 tools to do it's analysis:
 
