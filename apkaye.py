@@ -23,7 +23,7 @@ class APKaye(ServiceBase):
                           "indicators and information found in the APK manifest file is displayed."
     SERVICE_ENABLED = True
     SERVICE_RAM_MB = 512
-    SERVICE_REVISION = ServiceBase.parse_revision('$Id: 1996fb7534a37c74c1b0bd6be2738b90d5d9d8b3 $')
+    SERVICE_REVISION = ServiceBase.parse_revision('$Id$')
     SERVICE_DEFAULT_SUBMISSION_PARAMS = [
         {"default": False,
          "name": "resubmit_apk_as_jar",
@@ -629,7 +629,7 @@ class APKaye(ServiceBase):
         self.run_badging_analysis(apk, result)
         self.run_strings_analysis(apk, result)
         self.run_apktool(apk, apktool_out, result)
-        if request.get_param('resubmit_apk_as_jar', False):
+        if request.get_param('resubmit_apk_as_jar'):
             self.resubmit_dex2jar_output(apk, d2j_out, result, request)
 
         request.result = result
