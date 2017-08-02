@@ -1,12 +1,12 @@
 # APKaye Service
 
-This Assemblyline service analyzes Android APKs. APKs are decompiled and inspected. Network indicators and information found in the APK manifest file is displayed.
+This Assemblyline service analyzes Android APKs. APKs are decompiled and inspected. Network indicators and information found in the APK manifest file are displayed.
 
 **NOTE**: This service does not require you to buy any licence and is preinstalled and working after a default installation
 
 ## Execution
 
-APKaye use the following 3 tools to do it's analysis:
+APKaye employs the following 3 tools to do its analysis:
 
 * Apktool
 * dex2jar
@@ -14,11 +14,11 @@ APKaye use the following 3 tools to do it's analysis:
 
 ### Apktool
 
-Apktool is used to pull appart the APK file. After the APK has been pulled appart, the service performs the following analysis:
+Apktool is used to pull apart the APK file. After the APK has been pulled apart, the service performs the following analysis:
 
-* Check statically for network indicators
-* Gather and analyse the different scripts and native binaries/libraries
-* Validate signing certificate
+* Static check for network indicators
+* Gathers and analyses the different scripts and native binaries/libraries
+* Validates signing certificate
 
 ### dev2jar
 
@@ -29,4 +29,4 @@ Dex2jar is optionally used for converting the .dex objects into JAR files to be 
 Aapt is used to analyse the metadata of the APK file. It performs the following tasks:
 
 * Analyses the manifest for permissions used, SDK target, components used, ...
-* Pull out and analyses the different strings in the APK
+* Pulls out and analyses the different strings in the APK
