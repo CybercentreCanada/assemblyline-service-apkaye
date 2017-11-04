@@ -115,6 +115,16 @@ class APKaye(ServiceBase):
                                      APK's certificate is expiring before the certificate validity date.
                                      """))
 
+    AL_APKaye_017 = Heuristic("AL_APKaye_017", "Package version is unlikely", "android/apk",
+                              dedent("""\
+                                             The package version is either suspiciously low or suspiciously high.
+                                             """))
+
+    AL_APKaye_018 = Heuristic("AL_APKaye_018", "Duplicate permission definition", "android/apk",
+                              dedent("""\
+                                         Some permissions are defined more than once in the manifest file.
+                                         """))
+
     def __init__(self, cfg):
         super(APKaye, self).__init__(cfg)
         self.apktool = cfg.get("APKTOOL_PATH", None)
@@ -191,7 +201,7 @@ class APKaye(ServiceBase):
                             try:
                                 int(country)
                                 is_int_country = True
-                            except:
+                            except Exception:
                                 is_int_country = False
 
                             if len(country) != 2 or is_int_country:
@@ -478,12 +488,14 @@ class APKaye(ServiceBase):
         permissions = []
         components = []
         features = []
+        pkg_version = None
         for line in badging.splitlines():
             if line.startswith("package: "):
                 pkg_name = line.split("name='")[1].split("'")[0]
                 pkg_version = line.split("versionCode='")[1].split("'")[0]
                 res_badging.add_line("Package: %s v.%s" % (pkg_name, pkg_version))
                 res_badging.add_tag(TAG_TYPE.ANDROID_PKG_NAME, pkg_name, TAG_WEIGHT.HIGH)
+                res_badging.add_tag(TAG_TYPE.ANDROID_APP_VERSION, pkg_version, TAG_WEIGHT.HIGH)
 
             if line.startswith("sdkVersion:"):
                 min_sdk = line.split(":'")[1][:-1]
@@ -525,6 +537,15 @@ class APKaye(ServiceBase):
                 if feature not in features:
                     features.append(feature)
 
+        if pkg_version is not None:
+            pkg_version = int(pkg_version)
+            if pkg_version < 15:
+                ResultSection(SCORE.HIGH, "Package version is suspiciously low", parent=res_badging)
+                result.report_heuristic(APKaye.AL_APKaye_017)
+            elif pkg_version > 999999:
+                ResultSection(SCORE.HIGH, "Package version is suspiciously high", parent=res_badging)
+                result.report_heuristic(APKaye.AL_APKaye_017)
+
         if libs:
             res_lib = ResultSection(SCORE.NULL, "Libraries used", parent=res_badging)
             for lib in libs:
@@ -544,6 +565,10 @@ class APKaye(ServiceBase):
                         res_permissions.add_tag(TAG_TYPE.ANDROID_PERMISSION, perm, TAG_WEIGHT.NULL)
                 else:
                     unknown_permissions.append(perm)
+
+            if len(set(permissions)) < len(permissions):
+                ResultSection(SCORE.HIGH, "Some persmissions are defined more then once", parent=res_badging)
+                result.report_heuristic(APKaye.AL_APKaye_018)
 
             if dangerous_permissions:
                 res_dangerous_perm = ResultSection(SCORE.HIGH, "Dangerous permissions used", parent=res_badging)
