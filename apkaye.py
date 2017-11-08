@@ -2,6 +2,8 @@ import os
 from subprocess import Popen, PIPE, call
 from textwrap import dedent
 
+import time
+
 from assemblyline.common.charset import safe_str
 from assemblyline.common.identify import fileinfo
 from assemblyline.common.net import is_valid_domain, is_valid_ip, is_valid_email
@@ -132,6 +134,12 @@ class APKaye(ServiceBase):
                                      not have to embedded other APKs to accomplish what they need to do.
                                      """))
 
+    AL_APKaye_020 = Heuristic("AL_APKaye_020", "Invalid cert valid until date", "android/apk",
+                              dedent("""\
+                                     The certificate is not valid until the minimum playstore valid date. 
+                                     This means that this APK could not even be deployed on the playstore.
+                                     """))
+
     def __init__(self, cfg):
         super(APKaye, self).__init__(cfg)
         self.apktool = cfg.get("APKTOOL_PATH", None)
@@ -163,6 +171,11 @@ class APKaye(ServiceBase):
                         valid_to = ""
                         valid_year_end = 0
                         valid_year_start = 0
+                        valid_until_date = time.time()
+                        play_store_min = 'Sat Oct 22 00:00:00 2033'
+                        play_store_min_valid_date = time.mktime(time.strptime(play_store_min,
+                                                                              "%a %b %d %H:%M:%S %Y"))
+
                         for line in stdout.splitlines():
                             if "Owner:" in line:
                                 owner = line.split(": ", 1)[1]
@@ -171,13 +184,22 @@ class APKaye(ServiceBase):
                                     country = country[1]
                                 else:
                                     country = ""
+
                             if "Issuer:" in line:
                                 issuer = line.split(": ", 1)[1]
+
                             if "Valid from:" in line:
                                 valid_from = line.split(": ", 1)[1].split(" until:")[0]
                                 valid_to = line.rsplit(": ", 1)[1]
-                                valid_year_start = int(valid_from.split(" ")[-1])
-                                valid_year_end = int(valid_to.split(" ")[-1])
+
+                                valid_from_splitted = valid_from.split(" ")
+                                valid_to_splitted = valid_to.split(" ")
+
+                                valid_year_start = int(valid_from_splitted[-1])
+                                valid_year_end = int(valid_to_splitted[-1])
+
+                                valid_until = " ".join(valid_to_splitted[:-2] + valid_to_splitted[-1:])
+                                valid_until_date = time.mktime(time.strptime(valid_until, "%a %b %d %H:%M:%S %Y"))
 
                         result.add_tag(TAG_TYPE.ANDROID_CERT_START_DATE, valid_from, TAG_WEIGHT.HIGH)
                         result.add_tag(TAG_TYPE.ANDROID_CERT_END_DATE, valid_to, TAG_WEIGHT.HIGH)
@@ -203,6 +225,10 @@ class APKaye(ServiceBase):
                         if (valid_year_end - valid_year_start) > 30:
                             ResultSection(SCORE.HIGH, "Certificate valid more then 30 years.", parent=res_cert)
                             result.report_heuristic(APKaye.AL_APKaye_013)
+                        if valid_until_date < play_store_min_valid_date:
+                            ResultSection(SCORE.VHIGH, "Certificate not valid until minimum valid playstore date.",
+                                          parent=res_cert)
+                            result.report_heuristic(APKaye.AL_APKaye_020)
                         if country:
                             # noinspection PyBroadException
                             try:
@@ -221,7 +247,7 @@ class APKaye(ServiceBase):
                             result.report_heuristic(APKaye.AL_APKaye_015)
 
         if not has_cert:
-            ResultSection(SCORE.HIGH, "This APK is not signed.", parent=result)
+            ResultSection(SCORE.VHIGH, "This APK is not signed.", parent=result)
             result.report_heuristic(APKaye.AL_APKaye_009)
 
     @staticmethod
@@ -565,9 +591,9 @@ class APKaye(ServiceBase):
         if pkg_version is not None:
             pkg_version = int(pkg_version)
             if pkg_version < 15:
-                ResultSection(SCORE.HIGH, "Package version is suspiciously low", parent=res_badging)
+                ResultSection(SCORE.VHIGH, "Package version is suspiciously low", parent=res_badging)
                 result.report_heuristic(APKaye.AL_APKaye_017)
-            elif pkg_version > 999999:
+            elif pkg_version > 999999999:
                 ResultSection(SCORE.HIGH, "Package version is suspiciously high", parent=res_badging)
                 result.report_heuristic(APKaye.AL_APKaye_017)
 
