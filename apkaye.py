@@ -2,7 +2,10 @@ import os
 from subprocess import Popen, PIPE, call
 from textwrap import dedent
 
+import time
+
 from assemblyline.common.charset import safe_str
+from assemblyline.common.identify import fileinfo
 from assemblyline.common.net import is_valid_domain, is_valid_ip, is_valid_email
 from assemblyline.al.common.heuristics import Heuristic
 from assemblyline.al.common.result import Result, ResultSection, SCORE, TEXT_FORMAT, TAG_TYPE, TAG_WEIGHT
@@ -115,6 +118,28 @@ class APKaye(ServiceBase):
                                      APK's certificate is expiring before the certificate validity date.
                                      """))
 
+    AL_APKaye_017 = Heuristic("AL_APKaye_017", "Package version is unlikely", "android/apk",
+                              dedent("""\
+                                     The package version is either suspiciously low or suspiciously high.
+                                     """))
+
+    AL_APKaye_018 = Heuristic("AL_APKaye_018", "Duplicate permission definition", "android/apk",
+                              dedent("""\
+                                     Some permissions are defined more than once in the manifest file.
+                                     """))
+
+    AL_APKaye_019 = Heuristic("AL_APKaye_019", "Embedded APKs", "android/apk",
+                              dedent("""\
+                                     One or more APK is present inside the APK. Normal Android app should
+                                     not have to embedded other APKs to accomplish what they need to do.
+                                     """))
+
+    AL_APKaye_020 = Heuristic("AL_APKaye_020", "Invalid cert valid until date", "android/apk",
+                              dedent("""\
+                                     The certificate is not valid until the minimum playstore valid date. 
+                                     This means that this APK could not even be deployed on the playstore.
+                                     """))
+
     def __init__(self, cfg):
         super(APKaye, self).__init__(cfg)
         self.apktool = cfg.get("APKTOOL_PATH", None)
@@ -146,6 +171,11 @@ class APKaye(ServiceBase):
                         valid_to = ""
                         valid_year_end = 0
                         valid_year_start = 0
+                        valid_until_date = time.time()
+                        play_store_min = 'Sat Oct 22 00:00:00 2033'
+                        play_store_min_valid_date = time.mktime(time.strptime(play_store_min,
+                                                                              "%a %b %d %H:%M:%S %Y"))
+
                         for line in stdout.splitlines():
                             if "Owner:" in line:
                                 owner = line.split(": ", 1)[1]
@@ -154,13 +184,22 @@ class APKaye(ServiceBase):
                                     country = country[1]
                                 else:
                                     country = ""
+
                             if "Issuer:" in line:
                                 issuer = line.split(": ", 1)[1]
+
                             if "Valid from:" in line:
                                 valid_from = line.split(": ", 1)[1].split(" until:")[0]
                                 valid_to = line.rsplit(": ", 1)[1]
-                                valid_year_start = int(valid_from.split(" ")[-1])
-                                valid_year_end = int(valid_to.split(" ")[-1])
+
+                                valid_from_splitted = valid_from.split(" ")
+                                valid_to_splitted = valid_to.split(" ")
+
+                                valid_year_start = int(valid_from_splitted[-1])
+                                valid_year_end = int(valid_to_splitted[-1])
+
+                                valid_until = " ".join(valid_to_splitted[:-2] + valid_to_splitted[-1:])
+                                valid_until_date = time.mktime(time.strptime(valid_until, "%a %b %d %H:%M:%S %Y"))
 
                         result.add_tag(TAG_TYPE.ANDROID_CERT_START_DATE, valid_from, TAG_WEIGHT.HIGH)
                         result.add_tag(TAG_TYPE.ANDROID_CERT_END_DATE, valid_to, TAG_WEIGHT.HIGH)
@@ -186,12 +225,16 @@ class APKaye(ServiceBase):
                         if (valid_year_end - valid_year_start) > 30:
                             ResultSection(SCORE.HIGH, "Certificate valid more then 30 years.", parent=res_cert)
                             result.report_heuristic(APKaye.AL_APKaye_013)
+                        if valid_until_date < play_store_min_valid_date:
+                            ResultSection(SCORE.VHIGH, "Certificate not valid until minimum valid playstore date.",
+                                          parent=res_cert)
+                            result.report_heuristic(APKaye.AL_APKaye_020)
                         if country:
                             # noinspection PyBroadException
                             try:
                                 int(country)
                                 is_int_country = True
-                            except:
+                            except Exception:
                                 is_int_country = False
 
                             if len(country) != 2 or is_int_country:
@@ -204,22 +247,32 @@ class APKaye(ServiceBase):
                             result.report_heuristic(APKaye.AL_APKaye_015)
 
         if not has_cert:
-            ResultSection(SCORE.HIGH, "This APK is not signed.", parent=result)
+            ResultSection(SCORE.VHIGH, "This APK is not signed.", parent=result)
             result.report_heuristic(APKaye.AL_APKaye_009)
 
     @staticmethod
     def find_scripts_and_exes(apktool_out_dir, result):
         scripts = []
         executables = []
-        for root, _, files in os.walk(os.path.join(apktool_out_dir, "assets")):
-            for f in files:
-                cur_file = os.path.join(root, f)
-                proc = Popen(["file", cur_file], stdout=PIPE, stderr=PIPE)
-                stdout, _ = proc.communicate()
-                if "script" in stdout.lower():
-                    scripts.append(cur_file.replace(os.path.join(apktool_out_dir, "assets"), 'assets'))
-                if "elf" in stdout.lower():
-                    executables.append(cur_file.replace(os.path.join(apktool_out_dir, "assets"), 'assets'))
+        apks = []
+
+        # We are gonna do the full apktool output dir here but in case we want to do less,
+        # you can edit the test_path list
+        test_paths = [apktool_out_dir]
+        for path in test_paths:
+            for root, _, files in os.walk(path):
+                for f in files:
+                    if f.endswith(".smali"):
+                        continue
+                    cur_file = os.path.join(root, f)
+                    tag = fileinfo(cur_file)['tag']
+
+                    if "code/sh" in tag:
+                        scripts.append(cur_file.replace(apktool_out_dir, ''))
+                    if "exectable/linux" in tag:
+                        executables.append(cur_file.replace(apktool_out_dir, ''))
+                    if "android/apk" in tag:
+                        executables.append(cur_file.replace(apktool_out_dir, ''))
 
         if scripts:
             res_script = ResultSection(SCORE.HIGH, "Shell scripts where found inside the APK", parent=result)
@@ -236,6 +289,14 @@ class APKaye(ServiceBase):
             if len(executables) > 20:
                 res_exe.add_line("and %s more..." % (len(executables) - 20))
             result.report_heuristic(APKaye.AL_APKaye_002)
+
+        if apks:
+            res_apk = ResultSection(SCORE.HIGH, "Other APKs where found inside the APK", parent=result)
+            for apk in sorted(apks)[:20]:
+                res_apk.add_line(apk)
+            if len(apks) > 20:
+                res_apk.add_line("and %s more..." % (len(apks) - 20))
+            result.report_heuristic(APKaye.AL_APKaye_019)
 
     @staticmethod
     def find_network_indicators(apktool_out_dir, result):
@@ -478,12 +539,14 @@ class APKaye(ServiceBase):
         permissions = []
         components = []
         features = []
+        pkg_version = None
         for line in badging.splitlines():
             if line.startswith("package: "):
                 pkg_name = line.split("name='")[1].split("'")[0]
                 pkg_version = line.split("versionCode='")[1].split("'")[0]
                 res_badging.add_line("Package: %s v.%s" % (pkg_name, pkg_version))
                 res_badging.add_tag(TAG_TYPE.ANDROID_PKG_NAME, pkg_name, TAG_WEIGHT.HIGH)
+                res_badging.add_tag(TAG_TYPE.ANDROID_APP_VERSION, pkg_version, TAG_WEIGHT.HIGH)
 
             if line.startswith("sdkVersion:"):
                 min_sdk = line.split(":'")[1][:-1]
@@ -525,6 +588,15 @@ class APKaye(ServiceBase):
                 if feature not in features:
                     features.append(feature)
 
+        if pkg_version is not None:
+            pkg_version = int(pkg_version)
+            if pkg_version < 15:
+                ResultSection(SCORE.VHIGH, "Package version is suspiciously low", parent=res_badging)
+                result.report_heuristic(APKaye.AL_APKaye_017)
+            elif pkg_version > 999999999:
+                ResultSection(SCORE.HIGH, "Package version is suspiciously high", parent=res_badging)
+                result.report_heuristic(APKaye.AL_APKaye_017)
+
         if libs:
             res_lib = ResultSection(SCORE.NULL, "Libraries used", parent=res_badging)
             for lib in libs:
@@ -544,6 +616,10 @@ class APKaye(ServiceBase):
                         res_permissions.add_tag(TAG_TYPE.ANDROID_PERMISSION, perm, TAG_WEIGHT.NULL)
                 else:
                     unknown_permissions.append(perm)
+
+            if len(set(permissions)) < len(permissions):
+                ResultSection(SCORE.HIGH, "Some persmissions are defined more then once", parent=res_badging)
+                result.report_heuristic(APKaye.AL_APKaye_018)
 
             if dangerous_permissions:
                 res_dangerous_perm = ResultSection(SCORE.HIGH, "Dangerous permissions used", parent=res_badging)
