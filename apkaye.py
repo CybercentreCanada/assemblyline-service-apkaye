@@ -140,7 +140,7 @@ class APKaye(ServiceBase):
                                      This means that this APK could not even be deployed on the playstore.
                                      """))
 
-    def __init__(self, cfg):
+    def __init__(self, cfg=None):
         super(APKaye, self).__init__(cfg)
         self.apktool = self.cfg.get("APKTOOL_PATH", None)
         self.dex2jar = self.cfg.get("DEX2JAR_PATH", None)
@@ -500,7 +500,7 @@ class APKaye(ServiceBase):
 
     def run_apktool(self, apk, target_dir, resutl):
         apktool = Popen(["java", "-jar", self.apktool, "--output", target_dir, "d", apk],
-                        stdout=PIPE, stderr=PIPE)
+                        stdout=PIPE, stderr=PIPE, shell=True)
         apktool.communicate()
         if os.path.exists(target_dir):
             self.analyse_apktool_output(target_dir, resutl)
