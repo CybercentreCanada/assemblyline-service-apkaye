@@ -142,9 +142,9 @@ class APKaye(ServiceBase):
 
     def __init__(self, cfg):
         super(APKaye, self).__init__(cfg)
-        self.apktool = cfg.get("APKTOOL_PATH", self.SERVICE_DEFAULT_CONFIG["APKTOOL_PATH"])
-        self.dex2jar = cfg.get("DEX2JAR_PATH", self.SERVICE_DEFAULT_CONFIG["DEX2JAR_PATH"])
-        self.aapt = cfg.get("AAPT_PATH", self.SERVICE_DEFAULT_CONFIG["AAPT_PATH"])
+        self.apktool = self.cfg.get("APKTOOL_PATH", None)
+        self.dex2jar = self.cfg.get("DEX2JAR_PATH", None)
+        self.aapt = self.cfg.get("AAPT_PATH", None)
 
     def start(self):
         if not os.path.isfile(self.apktool) or not os.path.isfile(self.dex2jar) or not os.path.isfile(self.aapt):
