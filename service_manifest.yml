@@ -1,0 +1,168 @@
+name: APKaye
+version: 1
+description: This service analyzes Android APKs. APKs are decompiled and inspected. Network indicators and information found in the APK manifest file is displayed.
+
+accepts: android/apk
+rejects: empty|metadata/.*
+
+stage: CORE
+category: Static Analysis
+
+file_required: true
+timeout: 60
+disable_cache: false
+
+enabled: true
+install_by_default: true
+is_external: false
+licence_count: 0
+supported_platforms: [linux]
+
+config:
+  APKTOOL_PATH: /opt/al/support/apkaye/apktool_2.0.3.jar
+  AAPT_PATH: /opt/al/support/apkaye/aapt/aapt
+  DEX2JAR_PATH: /opt/al/support/apkaye/dex2jar-2.0/d2j-dex2jar.sh
+
+submission_params:
+  - default: false
+    name: resubmit_apk_as_jar
+    type: bool
+    value: false
+
+heuristics:
+  - heur_id: AL_APKaye_001
+    name: Embedded shell scripts
+    score: 100
+    filetype: android/apk
+    description: One or more shell scripts found inside the APK. Normal Android app should not have to use shell script to accomplish what they need to do.
+
+  - heur_id: AL_APKaye_002
+    name: Embedded executable
+    score: 100
+    filetype: android/apk
+    description: An ELF file was found inside the APK which means that this APK will try to run native code on the Android platform.
+
+  - heur_id: AL_APKaye_003
+    name: Network indicator found
+    score: 0
+    filetype: android/apk
+    description: A network indicator was found inside the APK. That does not mean the APK is bad but this APK will most likely try to reach that network indicator.
+
+  - heur_id: AL_APKaye_004
+    name: Dangerous permission used
+    score: 100
+    filetype: android/apk
+    description: This APK uses permissions that are deemed dangerous.
+
+  - heur_id: AL_APKaye_005
+    name: Unknown permission used
+    score: 10
+    filetype: android/apk
+    description: This APK uses permissions unknown permissions.
+
+  - heur_id: AL_APKaye_006
+    name: No strings in APK
+    score: 500
+    filetype: android/apk
+    description: There are absolutely no strings provided in this APK. This is highly unlikely for a normal APK.
+
+  - heur_id: AL_APKaye_007
+    name: Low volume of strings in APK
+    score: 100
+    filetype: android/apk
+    description: There are less that 50 strings in this APK which is unlikely for any APKs.
+
+  - heur_id: AL_APKaye_008
+    name: Built for single language
+    score: 100
+    filetype: android/apk
+    description: This APK was build for a single language. In our days, this is unlikely.
+
+  - heur_id: AL_APKaye_009
+    name: Unsigned APK
+    score: 500
+    filetype: android/apk
+    description: This APK is not signed. Signing an APK is required to publish on Google Play.
+
+  - heur_id: AL_APKaye_010
+    name: Self-signed certificate
+    score: 1
+    filetype: android/apk
+    description: This APK is self-signed.
+
+  - heur_id: AL_APKaye_011
+    name: No country in certificate owner
+    score: 100
+    filetype: android/apk
+    description: This APK's certificate has no country in the owner field.
+
+  - heur_id: AL_APKaye_012
+    name: Certificate valid before first android release
+    score: 500
+    filetype: android/apk
+    description: This APK's certificate is valid before the release date of the first android release (API v1 - 09/2008).
+
+  - heur_id: AL_APKaye_013
+    name: Certificate valid for more than 30 years
+    score: 100
+    filetype: android/apk
+    description: APK's certificate is valid for more than 30 years. This is highly unlikely.
+
+  - heur_id: AL_APKaye_014
+    name: Invalid country code in certificate owner
+    score: 10
+    filetype: android/apk
+    description: APK's certificate has an invalid country code.
+
+  - heur_id: AL_APKaye_015
+    name: Certificate not using conventional name
+    score: 100
+    filetype: android/apk
+    description: APK's certificate is not named CERT.RSA. Android Studio, when building and APK, will name the certificate CERT.RSA.
+
+  - heur_id: AL_APKaye_016
+    name: Certificate expires before validity date starts
+    score: 500
+    filetype: android/apk
+    description: APK's certificate is expiring before the certificate validity date.
+
+  - heur_id: AL_APKaye_017
+    name: Package version is unlikely
+    score: 500
+    filetype: android/apk
+    description: The package version is either suspiciously low or suspiciously high.
+
+  - heur_id: AL_APKaye_018
+    name: Duplicate permission definition
+    score: 100
+    filetype: android/apk
+    description: Some permissions are defined more than once in the manifest file.
+
+  - heur_id: AL_APKaye_019
+    name: Embedded APKs
+    score: 100
+    filetype: android/apk
+    description: One or more APK is present inside the APK. Normal Android app should not have to embedded other APKs to accomplish what they need to do.
+
+  - heur_id: AL_APKaye_020
+    name: Certificate not valid until minimum valid Google Play Store date
+    score: 500
+    filetype: android/apk
+    description: The certificate is not valid until the minimum Google Play Store valid date. This means that this APK could not even be deployed on the playstore.
+
+docker_config:
+  image: cccs/alsvc_exampleservice:latest
+  cpu_cores: 1.0
+  ram_mb: 512
+
+update_config:
+  method: run
+  sources:
+    - uri: https://file-examples.com/wp-content/uploads/2017/02/zip_2MB.zip
+      name: sample_2mb_file
+    - uri: https://file-examples.com/wp-content/uploads/2017/02/zip_5MB.zip
+      name: sample_5mb_file
+  update_interval_seconds: 300
+  run_options:
+    image: cccs/assemblyline_dev:latest
+    command: python3 -m assemblyline_core.updater.url_update
