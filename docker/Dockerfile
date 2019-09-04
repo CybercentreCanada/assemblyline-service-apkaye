@@ -9,6 +9,9 @@ RUN apt-get update && apt-get install -y \
   lib32gcc1 \
   unzip
 
+RUN pip3 install \
+  awscli
+
 RUN mkdir -p /opt/al/support/apkaye
 
 # Download the support files from Amazon S3

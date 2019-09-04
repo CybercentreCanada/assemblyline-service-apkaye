@@ -13,9 +13,9 @@ from .static import ALL_ANDROID_PERMISSIONS, ISO_LOCALES
 class APKaye(ServiceBase):
     def __init__(self, config=None):
         super(APKaye, self).__init__(config)
-        self.apktool = self.config.get("APKTOOL_PATH", None)
-        self.dex2jar = self.config.get("DEX2JAR_PATH", None)
-        self.aapt = self.config.get("AAPT_PATH", None)
+        self.apktool = self.config.get("apktool_path", None)
+        self.dex2jar = self.config.get("dex2jar_path", None)
+        self.aapt = self.config.get("aapt_path", None)
 
     def start(self):
         if not os.path.isfile(self.apktool) or not os.path.isfile(self.dex2jar) or not os.path.isfile(self.aapt):
@@ -416,10 +416,10 @@ class APKaye(ServiceBase):
     def run_appt(self, args):
         cmd_line = [self.aapt]
         cmd_line.extend(args)
-        proc = Popen(cmd_line, stdout=PIPE, stderr=PIPE)
+        proc = Popen(cmd_line, stdout=PIPE, stderr=PIPE, encoding='ISO-8859-1')
         return proc.communicate()
 
-    def run_badging_analysis(self, apk_file, result: Result):
+    def run_badging_analysis(self, apk_file: str, result: Result):
         badging_args = ['d', 'badging', apk_file]
         badging, errors = self.run_appt(badging_args)
         if not badging:
@@ -431,7 +431,7 @@ class APKaye(ServiceBase):
         features = []
         pkg_version = None
         for line in badging.splitlines():
-            if line.startswith("package: "):
+            if line.startswith("package:"):
                 pkg_name = line.split("name='")[1].split("'")[0]
                 pkg_version = line.split("versionCode='")[1].split("'")[0]
                 res_badging.add_line(f"Package: {pkg_name} v.{pkg_version}")
@@ -561,8 +561,8 @@ class APKaye(ServiceBase):
             count = int(data_line.split(" entries")[0].rsplit(" ", 1)[1])
             styles = int(data_line.split(" styles")[0].rsplit(" ", 1)[1])
             if count < 50:
-                res_count = ResultSection("Low volume of strings, this is suspicious.", parent=res_strings,
-                                          body_format=BODY_FORMAT.MEMORY_DUMP, body=safe_str(strings))
+                ResultSection("Low volume of strings, this is suspicious.", parent=res_strings,
+                              body_format=BODY_FORMAT.MEMORY_DUMP, body=safe_str(strings))
 
             if len(languages) < 2:
                 ResultSection("This app is not built for multiple languages. This is unlikely.",

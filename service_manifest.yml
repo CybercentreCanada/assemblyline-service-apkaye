@@ -19,9 +19,9 @@ licence_count: 0
 supported_platforms: [linux]
 
 config:
-  APKTOOL_PATH: /opt/al/support/apkaye/apktool_2.0.3.jar
-  AAPT_PATH: /opt/al/support/apkaye/aapt/aapt
-  DEX2JAR_PATH: /opt/al/support/apkaye/dex2jar-2.0/d2j-dex2jar.sh
+  apktool_path: /opt/al/support/apkaye/apktool_2.0.3.jar
+  aapt_path: /opt/al/support/apkaye/aapt/aapt
+  dex2jar_path: /opt/al/support/apkaye/dex2jar-2.0/d2j-dex2jar.sh
 
 submission_params:
   - default: false
