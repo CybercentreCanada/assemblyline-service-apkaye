@@ -1,1 +1,1 @@
-from apkaye import APKaye
+from .apkaye import APKaye
