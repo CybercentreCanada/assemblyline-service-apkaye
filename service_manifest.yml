@@ -151,7 +151,7 @@ heuristics:
     description: The certificate is not valid until the minimum Google Play Store valid date. This means that this APK could not even be deployed on the playstore.
 
 docker_config:
-  image: cccs/alsvc_exampleservice:latest
+  image: cccs/assemblyline-service-apkaye:latest
   cpu_cores: 1.0
   ram_mb: 512
 
