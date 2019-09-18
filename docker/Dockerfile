@@ -29,6 +29,7 @@ RUN cp -R /tmp/aapt /opt/al/support/apkaye
 # Cleanup
 RUN rm -rf /tmp
 
+# Switch to assemblyline user
 USER assemblyline
 
 # Copy APKaye service code
