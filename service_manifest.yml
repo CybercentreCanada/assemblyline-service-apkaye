@@ -1,6 +1,8 @@
 name: APKaye
 version: 1
-description: This service analyzes Android APKs. APKs are decompiled and inspected. Network indicators and information found in the APK manifest file is displayed.
+description: >-
+  This service analyzes Android APKs. APKs are decompiled and inspected.
+  Network indicators and information found in the APK manifest file is displayed.
 
 accepts: android/apk
 rejects: empty|metadata/.*
@@ -33,19 +35,24 @@ heuristics:
     name: Embedded shell scripts
     score: 100
     filetype: android/apk
-    description: One or more shell scripts found inside the APK. Normal Android app should not have to use shell script to accomplish what they need to do.
+    description: >-
+      One or more shell scripts found inside the APK. Normal Android app should not have to use shell script to
+      accomplish what they need to do.
 
   - heur_id: AL_APKaye_002
     name: Embedded executable
     score: 100
     filetype: android/apk
-    description: An ELF file was found inside the APK which means that this APK will try to run native code on the Android platform.
+    description: >-
+      An ELF file was found inside the APK which means that this APK will try to run native code on the Android platform.
 
   - heur_id: AL_APKaye_003
     name: Network indicator found
     score: 0
     filetype: android/apk
-    description: A network indicator was found inside the APK. That does not mean the APK is bad but this APK will most likely try to reach that network indicator.
+    description: >-
+      A network indicator was found inside the APK. That does not mean the APK is bad but this APK will most likely
+      try to reach that network indicator.
 
   - heur_id: AL_APKaye_004
     name: Dangerous permission used
@@ -117,7 +124,8 @@ heuristics:
     name: Certificate not using conventional name
     score: 100
     filetype: android/apk
-    description: APK's certificate is not named CERT.RSA. Android Studio, when building and APK, will name the certificate CERT.RSA.
+    description: >-
+      APK's certificate is not named CERT.RSA. Android Studio, when building and APK, will name the certificate CERT.RSA.
 
   - heur_id: AL_APKaye_016
     name: Certificate expires before validity date starts
@@ -141,27 +149,19 @@ heuristics:
     name: Embedded APKs
     score: 100
     filetype: android/apk
-    description: One or more APK is present inside the APK. Normal Android app should not have to embedded other APKs to accomplish what they need to do.
+    description: >-
+      One or more APK is present inside the APK. Normal Android app should not have to embedded other APKs to
+      accomplish what they need to do.
 
   - heur_id: AL_APKaye_020
     name: Certificate not valid until minimum valid Google Play Store date
     score: 500
     filetype: android/apk
-    description: The certificate is not valid until the minimum Google Play Store valid date. This means that this APK could not even be deployed on the playstore.
+    description: >-
+      The certificate is not valid until the minimum Google Play Store valid date. This means that this APK could not
+      even be deployed on the Google Play Store.
 
 docker_config:
   image: cccs/assemblyline-service-apkaye:latest
   cpu_cores: 1.0
   ram_mb: 512
-
-update_config:
-  method: run
-  sources:
-    - uri: https://file-examples.com/wp-content/uploads/2017/02/zip_2MB.zip
-      name: sample_2mb_file
-    - uri: https://file-examples.com/wp-content/uploads/2017/02/zip_5MB.zip
-      name: sample_5mb_file
-  update_interval_seconds: 300
-  run_options:
-    image: cccs/assemblyline_dev:latest
-    command: python3 -m assemblyline_core.updater.url_update
