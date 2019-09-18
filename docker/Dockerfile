@@ -1,6 +1,6 @@
 FROM cccs/assemblyline-v4-service-base:latest
 
-ENV SERVICE_PATH alsvc_apkaye.APKaye
+ENV SERVICE_PATH alsvc_apkaye.apkaye.APKaye
 
 # Get required apt packages
 RUN apt-get update && apt-get install -y \
@@ -28,6 +28,8 @@ RUN cp -R /tmp/aapt /opt/al/support/apkaye
 
 # Cleanup
 RUN rm -rf /tmp
+
+USER assemblyline
 
 # Copy APKaye service code
 WORKDIR /opt/al/al_services/alsvc_apkaye
