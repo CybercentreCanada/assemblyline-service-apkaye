@@ -99,27 +99,27 @@ class APKaye(ServiceBase):
 
                         if owner == issuer:
                             ResultSection("Certificate is self-signed", parent=res_cert,
-                                          heuristic=Heuristic('AL_APKaye_010'))
+                                          heuristic=Heuristic(10))
 
                         if not country:
                             ResultSection("Certificate owner has no country", parent=res_cert,
-                                          heuristic=Heuristic('AL_APKaye_011'))
+                                          heuristic=Heuristic(11))
 
                         if valid_year_start < 2008:
                             ResultSection("Certificate valid before first android release", parent=res_cert,
-                                          heuristic=Heuristic('AL_APKaye_012'))
+                                          heuristic=Heuristic(12))
 
                         if valid_year_start > valid_year_end:
                             ResultSection("Certificate expires before validity date starts", parent=res_cert,
-                                          heuristic=Heuristic('AL_APKaye_016'))
+                                          heuristic=Heuristic(16))
 
                         if (valid_year_end - valid_year_start) > 30:
                             ResultSection("Certificate valid more then 30 years", parent=res_cert,
-                                          heuristic=Heuristic('AL_APKaye_013'))
+                                          heuristic=Heuristic(13))
 
                         if valid_until_date < play_store_min_valid_date:
                             ResultSection("Certificate not valid until minimum valid playstore date", parent=res_cert,
-                                          heuristic=Heuristic('AL_APKaye_020'))
+                                          heuristic=Heuristic(20))
 
                         if country:
                             try:
@@ -130,14 +130,14 @@ class APKaye(ServiceBase):
 
                             if len(country) != 2 or is_int_country:
                                 ResultSection("Invalid country code in certificate owner", parent=res_cert,
-                                              heuristic=Heuristic('AL_APKaye_014'))
+                                              heuristic=Heuristic(14))
 
                         if f != "CERT.RSA":
                             ResultSection(f"Certificate name not using conventinal name: {f}", parent=res_cert,
-                                          heuristic=Heuristic('AL_APKaye_015'))
+                                          heuristic=Heuristic(15))
 
         if not has_cert:
-            ResultSection("This APK is not signed", parent=result, heuristic=Heuristic('AL_APKaye_009'))
+            ResultSection("This APK is not signed", parent=result, heuristic=Heuristic(9))
 
     @staticmethod
     def find_scripts_and_exes(apktool_out_dir: str, result: Result):
@@ -165,7 +165,7 @@ class APKaye(ServiceBase):
 
         if scripts:
             res_script = ResultSection("Shell script(s) found inside APK", parent=result,
-                                       heuristic=Heuristic('AL_APKaye_001'))
+                                       heuristic=Heuristic(1))
             for script in sorted(scripts)[:20]:
                 res_script.add_line(script)
             if len(scripts) > 20:
@@ -173,7 +173,7 @@ class APKaye(ServiceBase):
 
         if executables:
             res_exe = ResultSection("Executable(s) found inside APK", parent=result,
-                                    heuristic=Heuristic('AL_APKaye_002'))
+                                    heuristic=Heuristic(2))
             for exe in sorted(executables)[:20]:
                 res_exe.add_line(exe)
             if len(executables) > 20:
@@ -181,7 +181,7 @@ class APKaye(ServiceBase):
 
         if apks:
             res_apk = ResultSection("Other APKs where found inside the APK", parent=result,
-                                    heuristic=Heuristic('AL_APKaye_019'))
+                                    heuristic=Heuristic(19))
             for apk in sorted(apks)[:20]:
                 res_apk.add_line(apk)
             if len(apks) > 20:
@@ -338,7 +338,7 @@ class APKaye(ServiceBase):
         email_list = list(set(email_list))
 
         if url_list or ip_list or domain_list or email_list:
-            res_net = ResultSection("Network indicator(s) found", parent=result, heuristic=Heuristic('AL_APKaye_003'))
+            res_net = ResultSection("Network indicator(s) found", parent=result, heuristic=Heuristic(3))
 
             if url_list:
                 res_url = ResultSection("Found urls in the decompiled code", parent=res_net)
@@ -482,10 +482,10 @@ class APKaye(ServiceBase):
             pkg_version = int(pkg_version)
             if pkg_version < 15:
                 ResultSection("Package version is suspiciously low", parent=res_badging,
-                              heuristic=Heuristic('AL_APKaye_017'))
+                              heuristic=Heuristic(17))
             elif pkg_version > 999999999:
                 ResultSection("Package version is suspiciously high", parent=res_badging,
-                              heuristic=Heuristic('AL_APKaye_017'))
+                              heuristic=Heuristic(17))
 
         if libs:
             res_lib = ResultSection("Libraries used", parent=res_badging)
@@ -509,18 +509,18 @@ class APKaye(ServiceBase):
 
             if len(set(permissions)) < len(permissions):
                 ResultSection("Some persmissions are defined more then once", parent=res_badging,
-                              heuristic=Heuristic('AL_APKaye_018'))
+                              heuristic=Heuristic(18))
 
             if dangerous_permissions:
                 res_dangerous_perm = ResultSection("Dangerous permissions used", parent=res_badging,
-                                                   heuristic=Heuristic('AL_APKaye_004'))
+                                                   heuristic=Heuristic(4))
                 for perm in dangerous_permissions:
                     res_dangerous_perm.add_line(perm)
                     res_dangerous_perm.add_tag('file.apk.permission', perm)
 
             if unknown_permissions:
                 res_unknown_perm = ResultSection("Unknown permissions used", parent=res_badging,
-                                                 heuristic=Heuristic('AL_APKaye_005'))
+                                                 heuristic=Heuristic(5))
                 for perm in unknown_permissions:
                     res_unknown_perm.add_line(perm)
                     res_unknown_perm.add_tag('file.apk.permission', perm)
@@ -544,9 +544,9 @@ class APKaye(ServiceBase):
         strings, _ = self.run_appt(string_args)
         if not strings or strings == "String pool is unitialized.\n":
             ResultSection("No strings found in APK", body="This is highly unlikely and most-likely malicious.",
-                          parent=result, heuristic=Heuristic('AL_APKaye_006'))
+                          parent=result, heuristic=Heuristic(6))
         else:
-            res_strings = ResultSection("Strings Analysis", parent=result, heuristic=Heuristic('AL_APKaye_007'))
+            res_strings = ResultSection("Strings Analysis", parent=result, heuristic=Heuristic(7))
 
             config_args = ['d', 'configurations', apk_file]
             configs, _ = self.run_appt(config_args)
@@ -566,7 +566,7 @@ class APKaye(ServiceBase):
 
             if len(languages) < 2:
                 ResultSection("This app is not built for multiple languages. This is unlikely.",
-                              parent=res_strings, heuristic=Heuristic('AL_APKaye_008'))
+                              parent=res_strings, heuristic=Heuristic(8))
 
             res_strings.add_line(f"Total string count: {count}")
             res_strings.add_line(f"Total styles: {styles}")
