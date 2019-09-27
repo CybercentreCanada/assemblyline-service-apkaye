@@ -24,7 +24,7 @@ RUN tar -zxf /tmp/aapt.tgz -C /tmp
 RUN cp -R /tmp/aapt /opt/al/support/apkaye
 
 # Cleanup
-RUN rm -rf /tmp
+RUN rm -rf /tmp/*
 
 # Switch to assemblyline user
 USER assemblyline
