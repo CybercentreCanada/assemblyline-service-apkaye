@@ -2,12 +2,13 @@ import os
 import time
 from subprocess import Popen, PIPE, call
 
+from static import ALL_ANDROID_PERMISSIONS, ISO_LOCALES
+
 from assemblyline.common.identify import fileinfo
 from assemblyline.common.net import is_valid_domain, is_valid_ip, is_valid_email
 from assemblyline.common.str_utils import safe_str
 from assemblyline_v4_service.common.base import ServiceBase
 from assemblyline_v4_service.common.result import Result, ResultSection, BODY_FORMAT, Heuristic
-from .static import ALL_ANDROID_PERMISSIONS, ISO_LOCALES
 
 
 class APKaye(ServiceBase):
@@ -31,8 +32,8 @@ class APKaye(ServiceBase):
 
         apk = request.file_path
         filename = os.path.basename(apk)
-        d2j_out = os.path.join(request.working_directory, f'{filename}.jar')
-        apktool_out = os.path.join(request.working_directory, f'{filename}_apktool')
+        d2j_out = os.path.join(self.working_directory, f'{filename}.jar')
+        apktool_out = os.path.join(self.working_directory, f'{filename}_apktool')
 
         self.run_badging_analysis(apk, result)
         self.run_strings_analysis(apk, result)
@@ -401,7 +402,7 @@ class APKaye(ServiceBase):
         call(["unzip", "-o", apk, os.path.basename(target)], cwd=os.path.dirname(target))
 
     def resubmit_dex2jar_output(self, apk_file: str, target: str, result: Result, request):
-        dex = os.path.join(request.working_directory, "classes.dex")
+        dex = os.path.join(self.working_directory, "classes.dex")
         self.get_dex(apk_file, dex)
         if os.path.exists(dex):
             d2j = Popen([self.dex2jar, "--output", target, dex],
