@@ -20,11 +20,11 @@ class APKaye(ServiceBase):
 
     def start(self):
         if not os.path.isfile(self.apktool) or not os.path.isfile(self.dex2jar) or not os.path.isfile(self.aapt):
-            self.log.error("One or more of the service tools (APKTOOL, AAPT, DEX2JAR) are missing. "
+            self.log.error("One or more of the service tools (APKTOOL, AAPT2, DEX2JAR) are missing. "
                            "The service will most likely fail.")
 
     def get_tool_version(self):
-        return "APKTOOL: 2.0.3 - D2J: 2.0 - AAPT: 23.0.2"
+        return "APKTOOL: 2.4.0 - D2J: 2.0 - AAPT2: 3.5.1-5435860"
 
     def execute(self, request):
         result = Result()
