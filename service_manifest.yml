@@ -17,7 +17,6 @@ disable_cache: false
 enabled: true
 is_external: false
 licence_count: 0
-supported_platforms: [linux]
 
 config:
   apktool_path: /opt/al/support/apkaye/apktool_2.0.3.jar
