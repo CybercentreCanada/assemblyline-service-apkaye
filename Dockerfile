@@ -4,7 +4,7 @@ ENV SERVICE_PATH apkaye.apkaye.APKaye
 
 # Get required apt packages
 RUN apt-get update && apt-get install -y \
-  openjdk-8-jdk
+  openjdk-8-jdk \
   libc6-i386 \
   lib32z1 \
   lib32gcc1 \
