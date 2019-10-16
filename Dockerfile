@@ -1,6 +1,6 @@
 FROM cccs/assemblyline-v4-service-base:latest
 
-ENV SERVICE_PATH apkaye.APKaye
+ENV SERVICE_PATH apkaye.apkaye.APKaye
 
 # Get required apt packages
 RUN apt-get update && apt-get install -y \
