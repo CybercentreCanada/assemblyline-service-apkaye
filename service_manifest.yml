@@ -19,9 +19,9 @@ is_external: false
 licence_count: 0
 
 config:
-  apktool_path: /opt/al/support/apkaye/apktool_2.4.0.jar
-  aapt_path: /opt/al/support/apkaye/aapt2/aapt2
-  dex2jar_path: /opt/al/support/apkaye/dex2jar-2.0/d2j-dex2jar.sh
+  apktool_path: /opt/al_support/apktool.jar
+  aapt_path: /opt/al_support/aapt2/aapt2
+  dex2jar_path: /opt/al_support/dex2jar-2.0/d2j-dex2jar.sh
 
 submission_params:
   - default: false

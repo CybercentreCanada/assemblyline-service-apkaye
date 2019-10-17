@@ -2,8 +2,7 @@ import os
 import time
 from subprocess import Popen, PIPE, call
 
-from static import ALL_ANDROID_PERMISSIONS, ISO_LOCALES
-
+from apkaye.static import ALL_ANDROID_PERMISSIONS, ISO_LOCALES
 from assemblyline.common.identify import fileinfo
 from assemblyline.common.net import is_valid_domain, is_valid_ip, is_valid_email
 from assemblyline.common.str_utils import safe_str
