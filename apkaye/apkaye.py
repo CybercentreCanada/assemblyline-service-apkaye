@@ -3,6 +3,7 @@ import time
 from subprocess import Popen, PIPE, call
 
 from apkaye.static import ALL_ANDROID_PERMISSIONS, ISO_LOCALES
+
 from assemblyline.common.identify import fileinfo
 from assemblyline.common.net import is_valid_domain, is_valid_ip, is_valid_email
 from assemblyline.common.str_utils import safe_str
@@ -410,7 +411,7 @@ class APKaye(ServiceBase):
             if os.path.exists(target):
                 res_sec = ResultSection("Classes.dex file was recompiled as a JAR and re-submitted for analysis")
                 res_sec.add_line(f"JAR file resubmitted as: {os.path.basename(target)}")
-                request.add_extracted(target, "Dex2Jar output JAR file")
+                request.add_extracted(target, os.path.basename(target), "Dex2Jar output JAR file")
                 result.add_section(res_sec)
 
     def run_appt(self, args):
