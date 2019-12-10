@@ -348,7 +348,7 @@ class APKaye(ServiceBase):
                     count += 1
                     if count <= 20:
                         res_url.add_line(url)
-                    res_url.add_tag('network.uri', url)
+                    res_url.add_tag('network.static.uri', url)
                 if count > 20:
                     res_url.add_line(f"and {count - 20} more...")
 
@@ -359,7 +359,7 @@ class APKaye(ServiceBase):
                     count += 1
                     if count <= 20:
                         res_ip.add_line(ip)
-                    res_ip.add_tag('network.ip', ip)
+                    res_ip.add_tag('network.static.ip', ip)
                 if count > 20:
                     res_ip.add_line(f"and {count - 20} more...")
 
@@ -370,7 +370,7 @@ class APKaye(ServiceBase):
                     count += 1
                     if count <= 20:
                         res_domain.add_line(domain)
-                    res_domain.add_tag('network.domain', domain)
+                    res_domain.add_tag('network.static.domain', domain)
                 if count > 20:
                     res_domain.add_line(f"and {count - 20} more...")
 
