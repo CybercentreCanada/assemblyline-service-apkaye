@@ -161,6 +161,6 @@ heuristics:
       even be deployed on the Google Play Store.
 
 docker_config:
-  image: cccs/assemblyline-service-apkaye:latest
+  image: ${REGISTRY}cccs/assemblyline-service-apkaye:latest
   cpu_cores: 1.0
   ram_mb: 512
