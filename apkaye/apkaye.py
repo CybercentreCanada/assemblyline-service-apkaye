@@ -549,7 +549,7 @@ class APKaye(ServiceBase):
             ResultSection("No strings found in APK", body="This is highly unlikely and most-likely malicious.",
                           parent=result, heuristic=Heuristic(6))
         else:
-            res_strings = ResultSection("Strings Analysis", parent=result, heuristic=Heuristic(7))
+            res_strings = ResultSection("Strings Analysis", parent=result)
 
             config_args = ['d', 'configurations', apk_file]
             configs, _ = self.run_appt(config_args)
@@ -565,7 +565,7 @@ class APKaye(ServiceBase):
             styles = int(data_line.split(" styles")[0].rsplit(" ", 1)[1])
             if count < 50:
                 ResultSection("Low volume of strings, this is suspicious.", parent=res_strings,
-                              body_format=BODY_FORMAT.MEMORY_DUMP, body=safe_str(strings))
+                              body_format=BODY_FORMAT.MEMORY_DUMP, body=safe_str(strings), heuristic=Heuristic(7))
 
             if len(languages) < 2:
                 ResultSection("This app is not built for multiple languages. This is unlikely.",
