@@ -34,10 +34,11 @@ class APKaye(ServiceBase):
         filename = os.path.basename(apk)
         d2j_out = os.path.join(self.working_directory, f'{filename}.jar')
         apktool_out = os.path.join(self.working_directory, f'{filename}_apktool')
+        apktool_workdir = os.path.join(self.working_directory, f'{filename}_apktool_workdir')
 
         self.run_badging_analysis(apk, result)
         self.run_strings_analysis(apk, result)
-        self.run_apktool(apk, apktool_out, result)
+        self.run_apktool(apk, apktool_out, apktool_workdir, result)
         if request.get_param('resubmit_apk_as_jar'):
             self.resubmit_dex2jar_output(apk, d2j_out, result, request)
 
@@ -51,6 +52,7 @@ class APKaye(ServiceBase):
                 cur_file = os.path.join(root, f)
                 stdout, stderr = Popen(["keytool", "-printcert", "-file", cur_file],
                                        stderr=PIPE, stdout=PIPE).communicate()
+                stdout = safe_str(stdout)
                 if stdout:
                     if "keytool error" not in stdout:
                         has_cert = True
@@ -155,13 +157,13 @@ class APKaye(ServiceBase):
                     if f.endswith(".smali"):
                         continue
                     cur_file = os.path.join(root, f)
-                    tag = fileinfo(cur_file)['tag']
+                    file_type = fileinfo(cur_file)['type']
 
-                    if "code/sh" in tag:
+                    if "code/sh" in file_type:
                         scripts.append(cur_file.replace(apktool_out_dir, ''))
-                    if "exectable/linux" in tag:
+                    elif "executable/linux" in file_type:
                         executables.append(cur_file.replace(apktool_out_dir, ''))
-                    if "android/apk" in tag:
+                    elif "android/apk" in file_type:
                         executables.append(cur_file.replace(apktool_out_dir, ''))
 
         if scripts:
@@ -274,7 +276,7 @@ class APKaye(ServiceBase):
         proc = Popen(['grep', '-ER', r'(([[:alpha:]](-?[[:alnum:]])*)\.)*[[:alpha:]](-?[[:alnum:]])+\.[[:alpha:]]{2,}',
                       smali_dir], stdout=PIPE, stderr=PIPE)
         grep, _ = proc.communicate()
-        for line in grep.splitlines():
+        for line in safe_str(grep).splitlines():
             file_path, line = line.split(":", 1)
 
             if "const-string" in line or "Ljava/lang/String;" in line:
@@ -287,10 +289,10 @@ class APKaye(ServiceBase):
                     continue
                 elif data.startswith("/"):
                     continue
-                elif len(data_split[0]) < len(data_split[-1]) and len(data_split[-1]) > 3:
-                    continue
                 elif data_low.startswith("http://") or data_low.startswith('ftp://') or data_low.startswith('https://'):
                     url_list.append(data)
+                elif len(data_split[0]) < len(data_split[-1]) and len(data_split[-1]) > 3:
+                    continue
                 elif data.startswith('android.') and data_low != data:
                     continue
                 elif "/" in data and "." in data and data.index("/") < data.index("."):
@@ -390,10 +392,10 @@ class APKaye(ServiceBase):
         self.find_scripts_and_exes(apktool_out_dir, result)
         self.validate_certs(apktool_out_dir, result)
 
-    def run_apktool(self, apk: str, target_dir: str, result: Result):
-        apktool = Popen(["java", "-jar", self.apktool, "--output", target_dir, "d", apk],
-                        stdout=PIPE, stderr=PIPE, shell=True)
-        apktool.communicate()
+    def run_apktool(self, apk: str, target_dir: str, work_dir: str, result: Result):
+        apktool = Popen(["java", "-jar", self.apktool, "--frame-path", work_dir, "--output", target_dir, "d", apk],
+                        stdout=PIPE, stderr=PIPE)
+        _ = apktool.communicate()
         if os.path.exists(target_dir):
             self.analyse_apktool_output(target_dir, result)
 
