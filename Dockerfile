@@ -4,6 +4,9 @@ ENV SERVICE_PATH apkaye.apkaye.APKaye
 
 USER root
 
+# The following line fix an issue with openjdk installation
+RUN mkdir -p /usr/share/man/man1
+
 # Get required apt packages
 RUN apt-get update && apt-get install -y openjdk-8-jre-headless java-common libc6-i386 lib32z1 lib32gcc1 unzip wget && rm -rf /var/lib/apt/lists/*
 
