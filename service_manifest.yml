@@ -1,5 +1,5 @@
 name: APKaye
-version: 1
+version: $SERVICE_TAG
 description: >-
   This service analyzes Android APKs. APKs are decompiled and inspected.
   Network indicators and information found in the APK manifest file is displayed.
@@ -161,6 +161,6 @@ heuristics:
       even be deployed on the Google Play Store.
 
 docker_config:
-  image: ${REGISTRY}cccs/assemblyline-service-apkaye:latest
+  image: ${REGISTRY}cccs/assemblyline-service-apkaye:$SERVICE_TAG
   cpu_cores: 1.0
   ram_mb: 512
