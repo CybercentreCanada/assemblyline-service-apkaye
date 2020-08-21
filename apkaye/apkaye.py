@@ -401,7 +401,8 @@ class APKaye(ServiceBase):
 
     @staticmethod
     def get_dex(apk: str, target: str):
-        call(["unzip", "-o", apk, os.path.basename(target)], cwd=os.path.dirname(target))
+        if apk and target:
+            call(["unzip", "-o", apk, os.path.basename(target)], cwd=os.path.dirname(target))
 
     def resubmit_dex2jar_output(self, apk_file: str, target: str, result: Result, request):
         dex = os.path.join(self.working_directory, "classes.dex")
