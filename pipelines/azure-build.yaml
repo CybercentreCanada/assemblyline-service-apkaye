@@ -27,7 +27,7 @@ stages:
         docker build --build-arg version=$TAG -t cccs/assemblyline-service-apkaye:$TAG -t cccs/assemblyline-service-apkaye:latest .
         displayName: Build containers
     - script: |
-        docker run -v ./test/:/opt/al_service/test/ cccs/assemblyline-service-apkaye:latest bash -c 'pip install -U -r test/requirements.txt; pytest'
+        docker run -v `pwd`/test/:/opt/al_service/test/ cccs/assemblyline-service-apkaye:latest bash -c 'pip install -U -r test/requirements.txt; pytest'
       displayName: Test containers
     - script: |
         docker push cccs/assemblyline-service-apkaye
