@@ -29,7 +29,7 @@ jobs:
         sudo env "PATH=$PATH" python -m pip install -U -r test/requirements.txt
         sudo rm -rf /var/lib/apt/lists/* ~/.cache/pip
       displayName: Setup environment
-    - script: python -m pytest --durations=10 -rsx -vv --cov-report=xml --cov=characterize
+    - script: python -m pytest --durations=10 -rsx -vv --cov-report=xml --cov=apkaye
       displayName: Test
     - script: python -m codecov
       displayName: Upload Coverage
