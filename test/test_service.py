@@ -1,5 +1,4 @@
 import os
-from subprocess import call
 import json
 import pytest
 import shutil
@@ -51,17 +50,6 @@ class TestAPKaye:
 
     @classmethod
     def setup_class(cls):
-        # Dockerfile stuff
-        call(["sudo", "apt-get", "install", "-y", "openjdk-8-jre-headless", "java-common", "libc6-i386", "lib32z1", "lib32gcc1", "unzip", "wget"])
-        call(["sudo", "mkdir", "-p", "/opt/al_support"])
-        call(["sudo", "wget", "-O", "/opt/al_support/apktool.jar", "https://bitbucket.org/iBotPeaches/apktool/downloads/apktool_2.4.0.jar"])
-        call(["sudo", "wget", "-O", "/tmp/dex2jar.zip", "https://github.com/pxb1988/dex2jar/releases/download/2.0/dex-tools-2.0.zip"])
-        call(["sudo", "wget", "-O", "/tmp/aapt2.jar", "https://dl.google.com/dl/android/maven2/com/android/tools/build/aapt2/3.5.1-5435860/aapt2-3.5.1-5435860-linux.jar"])
-        call(["sudo", "unzip", "-o", "/tmp/dex2jar.zip", "-d", "/opt/al_support"])
-        # call(["sudo", "chmod", "+x", "/opt/al_support/dex2jar-2.0/*.sh"])
-        call(["sudo", "unzip", "-o", "/tmp/aapt2.jar", "-d", "/opt/al_support/aapt2"])
-        call(["rm", "-rf", "/tmp/*"])
-
         # Placing the samples in the tmp directory
         samples_path = os.path.join(TEST_DIR, "samples")
         for sample in os.listdir(samples_path):
@@ -75,7 +63,6 @@ class TestAPKaye:
         for sample in os.listdir(samples_path):
             temp_sample_path = os.path.join("/tmp", sample)
             os.remove(temp_sample_path)
-        call(["sudo", "rm", "-rf", "/opt/al_support"])
 
     @staticmethod
     def test_init(class_instance):
