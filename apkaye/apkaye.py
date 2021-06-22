@@ -9,7 +9,7 @@ from assemblyline.common.net import is_valid_domain, is_valid_ip, is_valid_email
 from assemblyline.common.str_utils import safe_str
 from assemblyline_v4_service.common.base import ServiceBase
 from assemblyline_v4_service.common.result import Result, ResultSection, BODY_FORMAT, Heuristic
-
+from assemblyline_v4_service.common.keytool_parse import Certificate, certificate_chain_from_printcert, keytool_printcert
 
 class APKaye(ServiceBase):
     def __init__(self, config=None):
@@ -50,94 +50,74 @@ class APKaye(ServiceBase):
         for root, _, files in os.walk(os.path.join(apktool_out_dir, "original", "META-INF")):
             for f in files:
                 cur_file = os.path.join(root, f)
-                stdout, stderr = Popen(["keytool", "-printcert", "-file", cur_file],
-                                       stderr=PIPE, stdout=PIPE).communicate()
-                stdout = safe_str(stdout)
+                stdout = keytool_printcert(cur_file)
                 if stdout:
-                    if "keytool error" not in stdout:
-                        has_cert = True
-                        issuer = ""
-                        owner = ""
-                        country = ""
-                        valid_from = ""
-                        valid_to = ""
-                        valid_year_end = 0
-                        valid_year_start = 0
-                        valid_until_date = time.time()
-                        play_store_min = 'Sat Oct 22 00:00:00 2033'
-                        play_store_min_valid_date = time.mktime(time.strptime(play_store_min, "%a %b %d %H:%M:%S %Y"))
+                    certs = certificate_chain_from_printcert(stdout)
+                    has_cert = True
 
-                        for line in stdout.splitlines():
-                            if "Owner:" in line:
-                                owner = line.split(": ", 1)[1]
-                                country = owner.split("C=")
-                                if len(country) != 1:
-                                    country = country[1]
-                                else:
-                                    country = ""
+                    valid_year_end = 0
+                    valid_year_start = 0
+                    valid_until_date = time.time()
+                    play_store_min = 'Sat Oct 22 00:00:00 2033'
+                    play_store_min_valid_date = time.mktime(time.strptime(play_store_min, "%a %b %d %H:%M:%S %Y"))
 
-                            if "Issuer:" in line:
-                                issuer = line.split(": ", 1)[1]
+                    for cert in certs:
 
-                            if "Valid from:" in line:
-                                valid_from = line.split(": ", 1)[1].split(" until:")[0]
-                                valid_to = line.rsplit(": ", 1)[1]
+                        res_cert = ResultSection("Certificate Analysis", body=safe_str(cert.raw),
+                                    parent=result, body_format=BODY_FORMAT.MEMORY_DUMP)
 
-                                valid_from_splitted = valid_from.split(" ")
-                                valid_to_splitted = valid_to.split(" ")
+                        res_cert.add_tag('cert.valid.start', cert.valid_from)
+                        res_cert.add_tag('cert.valid.end', cert.valid_to)
+                        res_cert.add_tag('cert.issuer', cert.issuer)
+                        res_cert.add_tag('cert.owner', cert.owner)
 
-                                valid_year_start = int(valid_from_splitted[-1])
-                                valid_year_end = int(valid_to_splitted[-1])
+                        valid_from_splitted = cert.valid_from.split(" ")
+                        valid_to_splitted = cert.valid_to.split(" ")
 
-                                valid_until = " ".join(valid_to_splitted[:-2] + valid_to_splitted[-1:])
-                                valid_until_date = time.mktime(time.strptime(valid_until, "%a %b %d %H:%M:%S %Y"))
+                        valid_year_start = int(valid_from_splitted[-1])
+                        valid_year_end = int(valid_to_splitted[-1])
 
-                        res_cert = ResultSection("Certificate Analysis", body=safe_str(stdout),
-                                                 parent=result, body_format=BODY_FORMAT.MEMORY_DUMP)
+                        valid_until = " ".join(valid_to_splitted[:-2] + valid_to_splitted[-1:])
+                        valid_until_date = time.mktime(time.strptime(valid_until, "%a %b %d %H:%M:%S %Y"))
 
-                        res_cert.add_tag('cert.valid.start', valid_from)
-                        res_cert.add_tag('cert.valid.end', valid_to)
-                        res_cert.add_tag('cert.issues', issuer)
-                        res_cert.add_tag('cert.owner', owner)
-
-                        if owner == issuer:
+                        if cert.owner == cert.issuer:
                             ResultSection("Certificate is self-signed", parent=res_cert,
-                                          heuristic=Heuristic(10))
+                                            heuristic=Heuristic(10))
 
-                        if not country:
+                        if not cert.country:
                             ResultSection("Certificate owner has no country", parent=res_cert,
-                                          heuristic=Heuristic(11))
+                                            heuristic=Heuristic(11))
 
                         if valid_year_start < 2008:
                             ResultSection("Certificate valid before first android release", parent=res_cert,
-                                          heuristic=Heuristic(12))
+                                            heuristic=Heuristic(12))
 
                         if valid_year_start > valid_year_end:
                             ResultSection("Certificate expires before validity date starts", parent=res_cert,
-                                          heuristic=Heuristic(16))
+                                            heuristic=Heuristic(16))
 
                         if (valid_year_end - valid_year_start) > 30:
                             ResultSection("Certificate valid more then 30 years", parent=res_cert,
-                                          heuristic=Heuristic(13))
+                                            heuristic=Heuristic(13))
 
                         if valid_until_date < play_store_min_valid_date:
                             ResultSection("Certificate not valid until minimum valid playstore date", parent=res_cert,
-                                          heuristic=Heuristic(20))
+                                            heuristic=Heuristic(20))
 
-                        if country:
+                        if cert.country:
                             try:
-                                int(country)
+                                int(cert.country)
                                 is_int_country = True
                             except Exception:
                                 is_int_country = False
 
-                            if len(country) != 2 or is_int_country:
+                            if len(cert.country) != 2 or is_int_country:
                                 ResultSection("Invalid country code in certificate owner", parent=res_cert,
-                                              heuristic=Heuristic(14))
+                                                heuristic=Heuristic(14))
 
-                        if f != "CERT.RSA":
-                            ResultSection(f"Certificate name not using conventional name: {f}", parent=res_cert,
-                                          heuristic=Heuristic(15))
+                    if f != "CERT.RSA":
+                        ResultSection(f"Certificate name not using conventional name: {f}", parent=res_cert,
+                                        heuristic=Heuristic(15))
 
         if not has_cert:
             ResultSection("This APK is not signed", parent=result, heuristic=Heuristic(9))
