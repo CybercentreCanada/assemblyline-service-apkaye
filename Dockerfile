@@ -9,7 +9,7 @@ USER root
 RUN mkdir -p /usr/share/man/man1
 
 # Get required apt packages
-RUN apt-get update && apt-get install -y openjdk-8-jre-headless java-common libc6-i386 lib32z1 lib32gcc1 unzip wget && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y default-jre-headless java-common libc6-i386 lib32z1 lib32gcc1 unzip wget && rm -rf /var/lib/apt/lists/*
 
 RUN mkdir -p /opt/al_support
 
