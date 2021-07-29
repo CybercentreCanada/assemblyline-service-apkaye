@@ -4,40 +4,40 @@ trigger: ["*"]
 pr: ["*"]
 
 pool:
-  vmImage: 'ubuntu-18.04'
+  vmImage: "ubuntu-20.04"
 
 jobs:
-- job: run_test
-  strategy:
-    matrix:
-      python3_7:
-        python.version: '3.7'
-      Python3_8:
-        python.version: '3.8'
+  - job: run_test
+    strategy:
+      matrix:
+        python3_7:
+          python.version: "3.7"
+        Python3_8:
+          python.version: "3.8"
 
-  timeoutInMinutes: 10
+    timeoutInMinutes: 10
 
-  steps:
-    - task: UsePythonVersion@0
-      displayName: Set python version
-      inputs:
-        versionSpec: '$(python.version)'
-    - script: |
-        sudo apt-get update
-        sudo apt-get install -yy build-essential libffi-dev libfuzzy-dev python3-dev libimage-exiftool-perl openjdk-8-jre-headless java-common libc6-i386 lib32z1 lib32gcc1 unzip wget
-        sudo mkdir -p /usr/share/man/man1
-        sudo mkdir -p /opt/al_support
-        sudo wget -O /opt/al_support/apktool.jar https://bitbucket.org/iBotPeaches/apktool/downloads/apktool_2.4.0.jar
-        sudo wget -O /tmp/dex2jar.zip https://github.com/pxb1988/dex2jar/releases/download/2.0/dex-tools-2.0.zip
-        sudo wget -O /tmp/aapt2.jar https://dl.google.com/dl/android/maven2/com/android/tools/build/aapt2/3.5.1-5435860/aapt2-3.5.1-5435860-linux.jar
-        sudo unzip -o /tmp/dex2jar.zip -d /opt/al_support
-        sudo chmod +x /opt/al_support/dex2jar-2.0/*.sh
-        sudo unzip -o /tmp/aapt2.jar -d /opt/al_support/aapt2
-        sudo env "PATH=$PATH" python -m pip install -U --no-cache-dir assemblyline assemblyline_v4_service
-        sudo env "PATH=$PATH" python -m pip install -U -r test/requirements.txt
-        sudo rm -rf /tmp/* /var/lib/apt/lists/* ~/.cache/pip
-      displayName: Setup environment
-    - script: python -m pytest --durations=10 -rsx -vv --cov-report=xml --cov=apkaye
-      displayName: Test
-    - script: python -m codecov
-      displayName: Upload Coverage
+    steps:
+      - task: UsePythonVersion@0
+        displayName: Set python version
+        inputs:
+          versionSpec: "$(python.version)"
+      - script: |
+          sudo apt-get update
+          sudo apt-get install -yy build-essential libffi-dev libfuzzy-dev python3-dev libimage-exiftool-perl openjdk-8-jre-headless java-common libc6-i386 lib32z1 lib32gcc1 unzip wget
+          sudo mkdir -p /usr/share/man/man1
+          sudo mkdir -p /opt/al_support
+          sudo wget -O /opt/al_support/apktool.jar https://bitbucket.org/iBotPeaches/apktool/downloads/apktool_2.4.0.jar
+          sudo wget -O /tmp/dex2jar.zip https://github.com/pxb1988/dex2jar/releases/download/2.0/dex-tools-2.0.zip
+          sudo wget -O /tmp/aapt2.jar https://dl.google.com/dl/android/maven2/com/android/tools/build/aapt2/3.5.1-5435860/aapt2-3.5.1-5435860-linux.jar
+          sudo unzip -o /tmp/dex2jar.zip -d /opt/al_support
+          sudo chmod +x /opt/al_support/dex2jar-2.0/*.sh
+          sudo unzip -o /tmp/aapt2.jar -d /opt/al_support/aapt2
+          sudo env "PATH=$PATH" python -m pip install -U --no-cache-dir assemblyline assemblyline_v4_service
+          sudo env "PATH=$PATH" python -m pip install -U -r test/requirements.txt
+          sudo rm -rf /tmp/* /var/lib/apt/lists/* ~/.cache/pip
+        displayName: Setup environment
+      - script: python -m pytest --durations=10 -rsx -vv --cov-report=xml --cov=apkaye
+        displayName: Test
+      - script: python -m codecov
+        displayName: Upload Coverage
