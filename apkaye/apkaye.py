@@ -1,5 +1,6 @@
 import os
 import time
+import hashlib
 from subprocess import Popen, PIPE, call
 
 from apkaye.static import ALL_ANDROID_PERMISSIONS, ISO_LOCALES
@@ -52,6 +53,13 @@ class APKaye(ServiceBase):
                 cur_file = os.path.join(root, f)
                 stdout = keytool_printcert(cur_file)
                 if stdout:
+                    # 'keytool' returns key error if cur_file is not a certificate;
+                    # 'keytool_printcert' returns None if key error;
+                    # compute cert file hash info
+                    cert_md5 = hashlib.md5(cur_file).hexdigest()
+                    cert_sha1 = hashlib.sha1(cur_file).hexdigest()
+                    cert_sha256 = hashlib.sha256(cur_file).hexdigest()
+
                     certs = certificate_chain_from_printcert(stdout)
                     has_cert = True
 
@@ -70,6 +78,9 @@ class APKaye(ServiceBase):
                         res_cert.add_tag('cert.valid.end', cert.valid_to)
                         res_cert.add_tag('cert.issuer', cert.issuer)
                         res_cert.add_tag('cert.owner', cert.owner)
+                        res_cert.add_tag('cert.thumbprint', cert_md5)
+                        res_cert.add_tag('cert.thumbprint', cert_sha1)
+                        res_cert.add_tag('cert.thumbprint', cert_sha256)
 
                         valid_from_splitted = cert.valid_from.split(" ")
                         valid_to_splitted = cert.valid_to.split(" ")
