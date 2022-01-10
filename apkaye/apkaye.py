@@ -10,7 +10,7 @@ from assemblyline.common.net import is_valid_domain, is_valid_ip, is_valid_email
 from assemblyline.common.str_utils import safe_str
 from assemblyline_v4_service.common.base import ServiceBase
 from assemblyline_v4_service.common.result import Result, ResultSection, BODY_FORMAT, Heuristic
-from assemblyline_v4_service.common.keytool_parse import Certificate, certificate_chain_from_printcert, keytool_printcert
+from assemblyline_v4_service.common.keytool_parse import certificate_chain_from_printcert, keytool_printcert
 
 
 class APKaye(ServiceBase):
@@ -51,15 +51,16 @@ class APKaye(ServiceBase):
         has_cert = False
         for root, _, files in os.walk(os.path.join(apktool_out_dir, "original", "META-INF")):
             for f in files:
-                cur_file = os.path.join(root, f)
-                stdout = keytool_printcert(cur_file)
+                file_path = os.path.join(root, f)
+                file_contents = open(file_path, 'rb').read()
+                stdout = keytool_printcert(file_path)
                 if stdout:
-                    # 'keytool' returns key error if cur_file is not a certificate;
+                    # 'keytool' returns key error if file_path is not a certificate;
                     # 'keytool_printcert' returns None if key error;
                     # compute cert file hash info
-                    cert_md5 = hashlib.md5(stdout.encode()).hexdigest()
-                    cert_sha1 = hashlib.sha1(stdout.encode()).hexdigest()
-                    cert_sha256 = hashlib.sha256(stdout.encode()).hexdigest()
+                    cert_md5 = hashlib.md5(file_contents).hexdigest()
+                    cert_sha1 = hashlib.sha1(file_contents).hexdigest()
+                    cert_sha256 = hashlib.sha256(file_contents).hexdigest()
 
                     certs = certificate_chain_from_printcert(stdout)
                     has_cert = True
@@ -148,15 +149,15 @@ class APKaye(ServiceBase):
                 for f in files:
                     if f.endswith(".smali"):
                         continue
-                    cur_file = os.path.join(root, f)
-                    file_type = fileinfo(cur_file)['type']
+                    file_path = os.path.join(root, f)
+                    file_type = fileinfo(file_path)['type']
 
                     if "code/sh" in file_type:
-                        scripts.append(cur_file.replace(apktool_out_dir, ''))
+                        scripts.append(file_path.replace(apktool_out_dir, ''))
                     elif "executable/linux" in file_type:
-                        executables.append(cur_file.replace(apktool_out_dir, ''))
+                        executables.append(file_path.replace(apktool_out_dir, ''))
                     elif "android/apk" in file_type:
-                        executables.append(cur_file.replace(apktool_out_dir, ''))
+                        executables.append(file_path.replace(apktool_out_dir, ''))
 
         if scripts:
             res_script = ResultSection("Shell script(s) found inside APK", parent=result,
