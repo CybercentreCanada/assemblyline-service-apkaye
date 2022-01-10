@@ -1,5 +1,6 @@
 import os
 import time
+import hashlib
 from subprocess import Popen, PIPE, call
 
 from apkaye.static import ALL_ANDROID_PERMISSIONS, ISO_LOCALES
@@ -9,7 +10,8 @@ from assemblyline.common.net import is_valid_domain, is_valid_ip, is_valid_email
 from assemblyline.common.str_utils import safe_str
 from assemblyline_v4_service.common.base import ServiceBase
 from assemblyline_v4_service.common.result import Result, ResultSection, BODY_FORMAT, Heuristic
-from assemblyline_v4_service.common.keytool_parse import Certificate, certificate_chain_from_printcert, keytool_printcert
+from assemblyline_v4_service.common.keytool_parse import certificate_chain_from_printcert, keytool_printcert
+
 
 class APKaye(ServiceBase):
     def __init__(self, config=None):
@@ -49,9 +51,17 @@ class APKaye(ServiceBase):
         has_cert = False
         for root, _, files in os.walk(os.path.join(apktool_out_dir, "original", "META-INF")):
             for f in files:
-                cur_file = os.path.join(root, f)
-                stdout = keytool_printcert(cur_file)
+                file_path = os.path.join(root, f)
+                file_contents = open(file_path, 'rb').read()
+                stdout = keytool_printcert(file_path)
                 if stdout:
+                    # 'keytool' returns key error if file_path is not a certificate;
+                    # 'keytool_printcert' returns None if key error;
+                    # compute cert file hash info
+                    cert_md5 = hashlib.md5(file_contents).hexdigest()
+                    cert_sha1 = hashlib.sha1(file_contents).hexdigest()
+                    cert_sha256 = hashlib.sha256(file_contents).hexdigest()
+
                     certs = certificate_chain_from_printcert(stdout)
                     has_cert = True
 
@@ -64,12 +74,15 @@ class APKaye(ServiceBase):
                     for cert in certs:
 
                         res_cert = ResultSection("Certificate Analysis", body=safe_str(cert.raw),
-                                    parent=result, body_format=BODY_FORMAT.MEMORY_DUMP)
+                                                 parent=result, body_format=BODY_FORMAT.MEMORY_DUMP)
 
                         res_cert.add_tag('cert.valid.start', cert.valid_from)
                         res_cert.add_tag('cert.valid.end', cert.valid_to)
                         res_cert.add_tag('cert.issuer', cert.issuer)
                         res_cert.add_tag('cert.owner', cert.owner)
+                        res_cert.add_tag('cert.thumbprint', cert_md5)
+                        res_cert.add_tag('cert.thumbprint', cert_sha1)
+                        res_cert.add_tag('cert.thumbprint', cert_sha256)
 
                         valid_from_splitted = cert.valid_from.split(" ")
                         valid_to_splitted = cert.valid_to.split(" ")
@@ -82,27 +95,27 @@ class APKaye(ServiceBase):
 
                         if cert.owner == cert.issuer:
                             ResultSection("Certificate is self-signed", parent=res_cert,
-                                            heuristic=Heuristic(10))
+                                          heuristic=Heuristic(10))
 
                         if not cert.country:
                             ResultSection("Certificate owner has no country", parent=res_cert,
-                                            heuristic=Heuristic(11))
+                                          heuristic=Heuristic(11))
 
                         if valid_year_start < 2008:
                             ResultSection("Certificate valid before first android release", parent=res_cert,
-                                            heuristic=Heuristic(12))
+                                          heuristic=Heuristic(12))
 
                         if valid_year_start > valid_year_end:
                             ResultSection("Certificate expires before validity date starts", parent=res_cert,
-                                            heuristic=Heuristic(16))
+                                          heuristic=Heuristic(16))
 
                         if (valid_year_end - valid_year_start) > 30:
                             ResultSection("Certificate valid more then 30 years", parent=res_cert,
-                                            heuristic=Heuristic(13))
+                                          heuristic=Heuristic(13))
 
                         if valid_until_date < play_store_min_valid_date:
                             ResultSection("Certificate not valid until minimum valid playstore date", parent=res_cert,
-                                            heuristic=Heuristic(20))
+                                          heuristic=Heuristic(20))
 
                         if cert.country:
                             try:
@@ -113,11 +126,11 @@ class APKaye(ServiceBase):
 
                             if len(cert.country) != 2 or is_int_country:
                                 ResultSection("Invalid country code in certificate owner", parent=res_cert,
-                                                heuristic=Heuristic(14))
+                                              heuristic=Heuristic(14))
 
                     if f != "CERT.RSA":
                         ResultSection(f"Certificate name not using conventional name: {f}", parent=res_cert,
-                                        heuristic=Heuristic(15))
+                                      heuristic=Heuristic(15))
 
         if not has_cert:
             ResultSection("This APK is not signed", parent=result, heuristic=Heuristic(9))
@@ -136,15 +149,15 @@ class APKaye(ServiceBase):
                 for f in files:
                     if f.endswith(".smali"):
                         continue
-                    cur_file = os.path.join(root, f)
-                    file_type = fileinfo(cur_file)['type']
+                    file_path = os.path.join(root, f)
+                    file_type = fileinfo(file_path)['type']
 
                     if "code/sh" in file_type:
-                        scripts.append(cur_file.replace(apktool_out_dir, ''))
+                        scripts.append(file_path.replace(apktool_out_dir, ''))
                     elif "executable/linux" in file_type:
-                        executables.append(cur_file.replace(apktool_out_dir, ''))
+                        executables.append(file_path.replace(apktool_out_dir, ''))
                     elif "android/apk" in file_type:
-                        executables.append(cur_file.replace(apktool_out_dir, ''))
+                        executables.append(file_path.replace(apktool_out_dir, ''))
 
         if scripts:
             res_script = ResultSection("Shell script(s) found inside APK", parent=result,
