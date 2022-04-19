@@ -404,10 +404,13 @@ class APKaye(ServiceBase):
             d2j = Popen([self.dex2jar, "--output", target, dex],
                         stdout=PIPE, stderr=PIPE)
             d2j.communicate()
-            if os.path.exists(target):
+            if os.path.exists(target) and request.add_extracted(
+                    target, os.path.basename(target),
+                    "Dex2Jar output JAR file", safelist_interface=self.api_interface):
+
                 res_sec = ResultSection("Classes.dex file was recompiled as a JAR and re-submitted for analysis")
                 res_sec.add_line(f"JAR file resubmitted as: {os.path.basename(target)}")
-                request.add_extracted(target, os.path.basename(target), "Dex2Jar output JAR file")
+
                 result.add_section(res_sec)
 
     def run_appt(self, args):
