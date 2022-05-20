@@ -5,7 +5,7 @@ from subprocess import Popen, PIPE, call
 
 from apkaye.static import ALL_ANDROID_PERMISSIONS, ISO_LOCALES
 
-from assemblyline.common.identify import fileinfo
+from assemblyline.common import forge
 from assemblyline.common.net import is_valid_domain, is_valid_ip, is_valid_email
 from assemblyline.common.str_utils import safe_str
 from assemblyline_v4_service.common.base import ServiceBase
@@ -19,6 +19,7 @@ class APKaye(ServiceBase):
         self.apktool = self.config.get("apktool_path", None)
         self.dex2jar = self.config.get("dex2jar_path", None)
         self.aapt = self.config.get("aapt_path", None)
+        self.identify = forge.get_identify(use_cache=os.environ.get('PRIVILEGED', 'false').lower() == 'true')
 
     def start(self):
         if not os.path.isfile(self.apktool) or not os.path.isfile(self.dex2jar) or not os.path.isfile(self.aapt):
@@ -135,8 +136,7 @@ class APKaye(ServiceBase):
         if not has_cert:
             ResultSection("This APK is not signed", parent=result, heuristic=Heuristic(9))
 
-    @staticmethod
-    def find_scripts_and_exes(apktool_out_dir: str, result: Result):
+    def find_scripts_and_exes(self, apktool_out_dir: str, result: Result):
         scripts = []
         executables = []
         apks = []
@@ -150,7 +150,7 @@ class APKaye(ServiceBase):
                     if f.endswith(".smali"):
                         continue
                     file_path = os.path.join(root, f)
-                    file_type = fileinfo(file_path)['type']
+                    file_type = self.identify.fileinfo(file_path)['type']
 
                     if "code/sh" in file_type:
                         scripts.append(file_path.replace(apktool_out_dir, ''))
