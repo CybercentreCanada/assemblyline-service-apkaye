@@ -27,7 +27,7 @@ class APKaye(ServiceBase):
                            "The service will most likely fail.")
 
     def get_tool_version(self):
-        return "APKTOOL: 2.4.0 - D2J: 2.0 - AAPT2: 3.5.1-5435860"
+        return "APKTOOL: 2.6.1 - D2J: 2.1 - AAPT2: 7.3.0-8691043"
 
     def execute(self, request):
         result = Result()
@@ -412,6 +412,9 @@ class APKaye(ServiceBase):
                 res_sec.add_line(f"JAR file resubmitted as: {os.path.basename(target)}")
 
                 result.add_section(res_sec)
+            else:
+                result.add_section(
+                    ResultSection("Unable to resubmit Dex file as a Jar because Dex version is incompatible."))
 
     def run_appt(self, args):
         cmd_line = [self.aapt]
