@@ -1,5 +1,4 @@
 import os
-import json
 import pytest
 import shutil
 
@@ -72,7 +71,7 @@ class TestAPKaye:
     @staticmethod
     def test_init(class_instance):
         assert class_instance.apktool == "/opt/al_support/apktool.jar"
-        assert class_instance.dex2jar == "/opt/al_support/dex2jar-2.0/d2j-dex2jar.sh"
+        assert class_instance.dex2jar == "/opt/al_support/dex-tools-2.1/d2j-dex2jar.sh"
         assert class_instance.aapt == "/opt/al_support/aapt2/aapt2"
 
     @staticmethod
@@ -83,7 +82,7 @@ class TestAPKaye:
 
     @staticmethod
     def test_get_tool_version(class_instance):
-        assert class_instance.get_tool_version() == "APKTOOL: 2.4.0 - D2J: 2.0 - AAPT2: 3.5.1-5435860"
+        assert class_instance.get_tool_version() == "APKTOOL: 2.6.1 - D2J: 2.1 - AAPT2: 7.3.0-8691043"
 
     @staticmethod
     @pytest.mark.parametrize("sample", [
