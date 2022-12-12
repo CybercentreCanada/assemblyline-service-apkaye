@@ -14,7 +14,7 @@ RUN apt-get update && apt-get install -y default-jre-headless java-common libc6-
 RUN mkdir -p /opt/al_support
 
 # Download the support files from Amazon S3
-RUN wget -O /opt/al_support/apktool.jar https://bitbucket.org/iBotPeaches/apktool/downloads/apktool_2.6.1.jar
+RUN wget -O /opt/al_support/apktool.jar https://github.com/iBotPeaches/Apktool/releases/download/v2.7.0/apktool_2.7.0.jar
 RUN wget -O /tmp/dex2jar.zip https://github.com/pxb1988/dex2jar/releases/download/v2.1/dex2jar-2.1.zip
 RUN wget -O /tmp/aapt2.jar https://dl.google.com/dl/android/maven2/com/android/tools/build/aapt2/7.3.0-8691043/aapt2-7.3.0-8691043-linux.jar
 
