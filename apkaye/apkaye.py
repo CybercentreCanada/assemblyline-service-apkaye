@@ -444,10 +444,16 @@ class APKaye(ServiceBase):
         for line in badging.splitlines():
             if line.startswith("package:"):
                 pkg_name = line.split("name='")[1].split("'")[0]
+
                 pkg_version = line.split("versionCode='")[1].split("'")[0]
-                res_badging.add_line(f"Package: {pkg_name} v.{pkg_version}")
+                # pkg_version must be a string here
+                if pkg_version:
+                    res_badging.add_line(f"Package: {pkg_name} v.{pkg_version}")
+                    res_badging.add_tag('file.apk.app.version', pkg_version)
+                else:
+                    res_badging.add_line(f"Package: {pkg_name} - No version supplied")
+
                 res_badging.add_tag('file.apk.pkg_name', pkg_name)
-                res_badging.add_tag('file.apk.app.version', pkg_version)
 
             if line.startswith("sdkVersion:"):
                 min_sdk = line.split(":'")[1][:-1]
@@ -489,7 +495,7 @@ class APKaye(ServiceBase):
                 if feature not in features:
                     features.append(feature)
 
-        if pkg_version is not None:
+        if pkg_version is not None and pkg_version != '':
             pkg_version = int(pkg_version)
             if pkg_version < 15:
                 ResultSection("Package version is suspiciously low", parent=res_badging,
