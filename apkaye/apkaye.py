@@ -1,16 +1,18 @@
+import hashlib
 import os
 import time
-import hashlib
-from subprocess import Popen, PIPE, call
+from subprocess import PIPE, Popen, call
 
 from apkaye.static import ALL_ANDROID_PERMISSIONS, ISO_LOCALES
-
 from assemblyline.common import forge
-from assemblyline.common.net import is_valid_domain, is_valid_ip, is_valid_email
+from assemblyline.common.net import (is_valid_domain, is_valid_email,
+                                     is_valid_ip)
 from assemblyline.common.str_utils import safe_str
 from assemblyline_v4_service.common.base import ServiceBase
-from assemblyline_v4_service.common.result import Result, ResultSection, BODY_FORMAT, Heuristic
-from assemblyline_v4_service.common.keytool_parse import certificate_chain_from_printcert, keytool_printcert
+from assemblyline_v4_service.common.keytool_parse import (
+    certificate_chain_from_printcert, keytool_printcert)
+from assemblyline_v4_service.common.result import (BODY_FORMAT, Heuristic,
+                                                   Result, ResultSection)
 
 
 class APKaye(ServiceBase):
@@ -150,6 +152,12 @@ class APKaye(ServiceBase):
                     if f.endswith(".smali"):
                         continue
                     file_path = os.path.join(root, f)
+
+                    # fileinfo uses safe_str on file paths, so if the file does not exist after it
+                    # is safe_str-ed, don't pass it to fileinfo
+                    if not os.path.exists(safe_str(file_path)):
+                        continue
+
                     file_type = self.identify.fileinfo(file_path)['type']
 
                     if "code/sh" in file_type:
