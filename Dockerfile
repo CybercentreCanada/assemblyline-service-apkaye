@@ -26,6 +26,13 @@ RUN unzip -o /tmp/aapt2.jar -d /opt/al_support/aapt2
 # Cleanup
 RUN rm -rf /tmp/*
 
+# Switch to assemblyline user
+USER assemblyline
+
+# Install python dependencies
+COPY requirements.txt requirements.txt
+RUN pip install --no-cache-dir --user --requirement requirements.txt && rm -rf ~/.cache/pip
+
 # Copy APKaye service code
 WORKDIR /opt/al_service
 COPY . .
