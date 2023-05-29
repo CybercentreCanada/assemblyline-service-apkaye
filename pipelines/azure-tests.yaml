@@ -42,5 +42,3 @@ jobs:
         displayName: Setup environment
       - script: python -m pytest -p no:cacheprovider --durations=10 -rsx -vv --disable-warnings
         displayName: Test
-      - script: python -m codecov
-        displayName: Upload Coverage
