@@ -5,14 +5,11 @@ from subprocess import PIPE, Popen, call
 
 from apkaye.static import ALL_ANDROID_PERMISSIONS, ISO_LOCALES
 from assemblyline.common import forge
-from assemblyline.common.net import (is_valid_domain, is_valid_email,
-                                     is_valid_ip)
+from assemblyline.common.net import is_valid_domain, is_valid_email, is_valid_ip
 from assemblyline.common.str_utils import safe_str
+from assemblyline_service_utilities.common.keytool_parse import certificate_chain_from_printcert, keytool_printcert
 from assemblyline_v4_service.common.base import ServiceBase
-from assemblyline_v4_service.common.keytool_parse import (
-    certificate_chain_from_printcert, keytool_printcert)
-from assemblyline_v4_service.common.result import (BODY_FORMAT, Heuristic,
-                                                   Result, ResultSection)
+from assemblyline_v4_service.common.result import BODY_FORMAT, Heuristic, Result, ResultSection
 
 
 class APKaye(ServiceBase):

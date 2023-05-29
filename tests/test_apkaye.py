@@ -1,6 +1,7 @@
 import os
-import pytest
 import shutil
+
+import pytest
 
 # Getting absolute paths, names and regexes
 TEST_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -90,9 +91,9 @@ class TestAPKaye:
     ])
     def test_execute(sample, class_instance):
         # Imports required to execute the sample
-        from assemblyline_v4_service.common.task import Task
         from assemblyline.odm.messages.task import Task as ServiceTask
         from assemblyline_v4_service.common.request import ServiceRequest
+        from assemblyline_v4_service.common.task import Task
 
         # Creating the required objects for execution
         service_task = ServiceTask(sample1)
