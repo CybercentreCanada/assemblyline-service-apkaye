@@ -155,7 +155,7 @@ class APKaye(ServiceBase):
                     if not os.path.exists(safe_str(file_path)):
                         continue
 
-                    file_type = self.identify.fileinfo(file_path)['type']
+                    file_type = self.identify.fileinfo(file_path, generate_hashes=False)['type']
 
                     if "code/sh" in file_type:
                         scripts.append(file_path.replace(apktool_out_dir, ''))
