@@ -4,7 +4,7 @@ description: >-
   This service analyzes Android APKs. APKs are decompiled and inspected.
   Network indicators and information found in the APK manifest file is displayed.
 
-accepts: android/apk
+accepts: android/apk|android/dex
 rejects: empty|metadata/.*
 
 stage: CORE
