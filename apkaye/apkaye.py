@@ -18,12 +18,14 @@ class APKaye(ServiceBase):
         self.apktool = self.config.get("apktool_path", None)
         self.dex2jar = self.config.get("dex2jar_path", None)
         self.aapt = self.config.get("aapt_path", None)
-        self.identify = forge.get_identify(use_cache=os.environ.get('PRIVILEGED', 'false').lower() == 'true')
+        self.identify = forge.get_identify(use_cache=os.environ.get("PRIVILEGED", "false").lower() == "true")
 
     def start(self):
         if not os.path.isfile(self.apktool) or not os.path.isfile(self.dex2jar) or not os.path.isfile(self.aapt):
-            self.log.error("One or more of the service tools (APKTOOL, AAPT2, DEX2JAR) are missing. "
-                           "The service will most likely fail.")
+            self.log.error(
+                "One or more of the service tools (APKTOOL, AAPT2, DEX2JAR) are missing. "
+                "The service will most likely fail."
+            )
 
     def get_tool_version(self):
         return "APKTOOL: 2.6.1 - D2J: 2.1 - AAPT2: 7.3.0-8691043"
@@ -34,14 +36,14 @@ class APKaye(ServiceBase):
 
         apk = request.file_path
         filename = os.path.basename(apk)
-        d2j_out = os.path.join(self.working_directory, f'{filename}.jar')
-        apktool_out = os.path.join(self.working_directory, f'{filename}_apktool')
-        apktool_workdir = os.path.join(self.working_directory, f'{filename}_apktool_workdir')
+        d2j_out = os.path.join(self.working_directory, f"{filename}.jar")
+        apktool_out = os.path.join(self.working_directory, f"{filename}_apktool")
+        apktool_workdir = os.path.join(self.working_directory, f"{filename}_apktool_workdir")
 
         self.run_badging_analysis(apk, result)
         self.run_strings_analysis(apk, result)
         self.run_apktool(apk, apktool_out, apktool_workdir, result)
-        if request.get_param('resubmit_apk_as_jar'):
+        if request.get_param("resubmit_apk_as_jar"):
             self.resubmit_dex2jar_output(apk, d2j_out, result, request)
 
         request.result = result
@@ -52,7 +54,7 @@ class APKaye(ServiceBase):
         for root, _, files in os.walk(os.path.join(apktool_out_dir, "original", "META-INF")):
             for f in files:
                 file_path = os.path.join(root, f)
-                file_contents = open(file_path, 'rb').read()
+                file_contents = open(file_path, "rb").read()
                 stdout = keytool_printcert(file_path)
                 if stdout:
                     # 'keytool' returns key error if file_path is not a certificate;
@@ -68,21 +70,24 @@ class APKaye(ServiceBase):
                     valid_year_end = 0
                     valid_year_start = 0
                     valid_until_date = time.time()
-                    play_store_min = 'Sat Oct 22 00:00:00 2033'
+                    play_store_min = "Sat Oct 22 00:00:00 2033"
                     play_store_min_valid_date = time.mktime(time.strptime(play_store_min, "%a %b %d %H:%M:%S %Y"))
 
                     for cert in certs:
+                        res_cert = ResultSection(
+                            "Certificate Analysis",
+                            body=safe_str(cert.raw),
+                            parent=result,
+                            body_format=BODY_FORMAT.MEMORY_DUMP,
+                        )
 
-                        res_cert = ResultSection("Certificate Analysis", body=safe_str(cert.raw),
-                                                 parent=result, body_format=BODY_FORMAT.MEMORY_DUMP)
-
-                        res_cert.add_tag('cert.valid.start', cert.valid_from)
-                        res_cert.add_tag('cert.valid.end', cert.valid_to)
-                        res_cert.add_tag('cert.issuer', cert.issuer)
-                        res_cert.add_tag('cert.owner', cert.owner)
-                        res_cert.add_tag('cert.thumbprint', cert_md5)
-                        res_cert.add_tag('cert.thumbprint', cert_sha1)
-                        res_cert.add_tag('cert.thumbprint', cert_sha256)
+                        res_cert.add_tag("cert.valid.start", cert.valid_from)
+                        res_cert.add_tag("cert.valid.end", cert.valid_to)
+                        res_cert.add_tag("cert.issuer", cert.issuer)
+                        res_cert.add_tag("cert.owner", cert.owner)
+                        res_cert.add_tag("cert.thumbprint", cert_md5)
+                        res_cert.add_tag("cert.thumbprint", cert_sha1)
+                        res_cert.add_tag("cert.thumbprint", cert_sha256)
 
                         valid_from_splitted = cert.valid_from.split(" ")
                         valid_to_splitted = cert.valid_to.split(" ")
@@ -94,28 +99,36 @@ class APKaye(ServiceBase):
                         valid_until_date = time.mktime(time.strptime(valid_until, "%a %b %d %H:%M:%S %Y"))
 
                         if cert.owner == cert.issuer:
-                            ResultSection("Certificate is self-signed", parent=res_cert,
-                                          heuristic=Heuristic(10))
+                            ResultSection("Certificate is self-signed", parent=res_cert, heuristic=Heuristic(10))
 
                         if not cert.country:
-                            ResultSection("Certificate owner has no country", parent=res_cert,
-                                          heuristic=Heuristic(11))
+                            ResultSection("Certificate owner has no country", parent=res_cert, heuristic=Heuristic(11))
 
                         if valid_year_start < 2008:
-                            ResultSection("Certificate valid before first android release", parent=res_cert,
-                                          heuristic=Heuristic(12))
+                            ResultSection(
+                                "Certificate valid before first android release",
+                                parent=res_cert,
+                                heuristic=Heuristic(12),
+                            )
 
                         if valid_year_start > valid_year_end:
-                            ResultSection("Certificate expires before validity date starts", parent=res_cert,
-                                          heuristic=Heuristic(16))
+                            ResultSection(
+                                "Certificate expires before validity date starts",
+                                parent=res_cert,
+                                heuristic=Heuristic(16),
+                            )
 
                         if (valid_year_end - valid_year_start) > 30:
-                            ResultSection("Certificate valid more then 30 years", parent=res_cert,
-                                          heuristic=Heuristic(13))
+                            ResultSection(
+                                "Certificate valid more then 30 years", parent=res_cert, heuristic=Heuristic(13)
+                            )
 
                         if valid_until_date < play_store_min_valid_date:
-                            ResultSection("Certificate not valid until minimum valid playstore date", parent=res_cert,
-                                          heuristic=Heuristic(20))
+                            ResultSection(
+                                "Certificate not valid until minimum valid playstore date",
+                                parent=res_cert,
+                                heuristic=Heuristic(20),
+                            )
 
                         if cert.country:
                             try:
@@ -125,12 +138,18 @@ class APKaye(ServiceBase):
                                 is_int_country = False
 
                             if len(cert.country) != 2 or is_int_country:
-                                ResultSection("Invalid country code in certificate owner", parent=res_cert,
-                                              heuristic=Heuristic(14))
+                                ResultSection(
+                                    "Invalid country code in certificate owner",
+                                    parent=res_cert,
+                                    heuristic=Heuristic(14),
+                                )
 
                     if f != "CERT.RSA":
-                        ResultSection(f"Certificate name not using conventional name: {f}", parent=res_cert,
-                                      heuristic=Heuristic(15))
+                        ResultSection(
+                            f"Certificate name not using conventional name: {f}",
+                            parent=res_cert,
+                            heuristic=Heuristic(15),
+                        )
 
         if not has_cert:
             ResultSection("This APK is not signed", parent=result, heuristic=Heuristic(9))
@@ -155,34 +174,31 @@ class APKaye(ServiceBase):
                     if not os.path.exists(safe_str(file_path)):
                         continue
 
-                    file_type = self.identify.fileinfo(file_path, generate_hashes=False)['type']
+                    file_type = self.identify.fileinfo(file_path, generate_hashes=False)["type"]
 
                     if "code/sh" in file_type:
-                        scripts.append(file_path.replace(apktool_out_dir, ''))
+                        scripts.append(file_path.replace(apktool_out_dir, ""))
                     elif "executable/linux" in file_type:
-                        executables.append(file_path.replace(apktool_out_dir, ''))
+                        executables.append(file_path.replace(apktool_out_dir, ""))
                     elif "android/apk" in file_type:
-                        executables.append(file_path.replace(apktool_out_dir, ''))
+                        executables.append(file_path.replace(apktool_out_dir, ""))
 
         if scripts:
-            res_script = ResultSection("Shell script(s) found inside APK", parent=result,
-                                       heuristic=Heuristic(1))
+            res_script = ResultSection("Shell script(s) found inside APK", parent=result, heuristic=Heuristic(1))
             for script in sorted(scripts)[:20]:
                 res_script.add_line(script)
             if len(scripts) > 20:
                 res_script.add_line(f"and {len(scripts) - 20} more...")
 
         if executables:
-            res_exe = ResultSection("Executable(s) found inside APK", parent=result,
-                                    heuristic=Heuristic(2))
+            res_exe = ResultSection("Executable(s) found inside APK", parent=result, heuristic=Heuristic(2))
             for exe in sorted(executables)[:20]:
                 res_exe.add_line(exe)
             if len(executables) > 20:
                 res_exe.add_line(f"and {len(executables) - 20} more...")
 
         if apks:
-            res_apk = ResultSection("Other APKs where found inside the APK", parent=result,
-                                    heuristic=Heuristic(19))
+            res_apk = ResultSection("Other APKs where found inside the APK", parent=result, heuristic=Heuristic(19))
             for apk in sorted(apks)[:20]:
                 res_apk.add_line(apk)
             if len(apks) > 20:
@@ -198,47 +214,47 @@ class APKaye(ServiceBase):
         ]
 
         indicator_whitelist = [
-            'google.to',
-            'google.ttl',
-            'google.delay',
-            'google_tagmanager.db',
-            'gtm_urls.db',
-            'gtm.url',
-            'google_tagmanager.db',
-            'google_analytics_v4.db',
-            'Theme.Dialog.Alert',
-            'popupLocationInfo.gravity',
-            'popupLocationInfo.displayId',
-            'popupLocationInfo.left',
-            'popupLocationInfo.top',
-            'popupLocationInfo.right',
-            'popupLocationInfo.bottom',
-            'googleads.g.doubleclick.net',
-            'ad.doubleclick.net',
-            '.doubleclick.net',
-            '.googleadservices.com',
-            '.googlesyndication.com',
-            'android.hardware.type.watch',
-            'mraid.js',
-            'google_inapp_purchase.db',
-            'mobileads.google.com',
-            'mobileads.google.com',
-            'share_history.xml',
-            'share_history.xml',
-            'activity_choser_model_history.xml',
-            'FragmentPager.SavedState{',
-            'android.remoteinput.results',
-            'android.people',
-            'android.picture',
-            'android.icon',
-            'android.text',
-            'android.title',
-            'android.title.big',
-            'FragmentTabHost.SavedState{',
-            'android.remoteinput.results',
-            'android.remoteinput.results',
-            'android.remoteinput.results',
-            'libcore.icu.ICU',
+            "google.to",
+            "google.ttl",
+            "google.delay",
+            "google_tagmanager.db",
+            "gtm_urls.db",
+            "gtm.url",
+            "google_tagmanager.db",
+            "google_analytics_v4.db",
+            "Theme.Dialog.Alert",
+            "popupLocationInfo.gravity",
+            "popupLocationInfo.displayId",
+            "popupLocationInfo.left",
+            "popupLocationInfo.top",
+            "popupLocationInfo.right",
+            "popupLocationInfo.bottom",
+            "googleads.g.doubleclick.net",
+            "ad.doubleclick.net",
+            ".doubleclick.net",
+            ".googleadservices.com",
+            ".googlesyndication.com",
+            "android.hardware.type.watch",
+            "mraid.js",
+            "google_inapp_purchase.db",
+            "mobileads.google.com",
+            "mobileads.google.com",
+            "share_history.xml",
+            "share_history.xml",
+            "activity_choser_model_history.xml",
+            "FragmentPager.SavedState{",
+            "android.remoteinput.results",
+            "android.people",
+            "android.picture",
+            "android.icon",
+            "android.text",
+            "android.title",
+            "android.title.big",
+            "FragmentTabHost.SavedState{",
+            "android.remoteinput.results",
+            "android.remoteinput.results",
+            "android.remoteinput.results",
+            "libcore.icu.ICU",
         ]
 
         file_list = []
@@ -271,14 +287,22 @@ class APKaye(ServiceBase):
         skip_list = list(set(skip_list))
 
         # Find indicators
-        proc = Popen(['grep', '-ER', r'(([[:alpha:]](-?[[:alnum:]])*)\.)*[[:alpha:]](-?[[:alnum:]])+\.[[:alpha:]]{2,}',
-                      smali_dir], stdout=PIPE, stderr=PIPE)
+        proc = Popen(
+            [
+                "grep",
+                "-ER",
+                r"(([[:alpha:]](-?[[:alnum:]])*)\.)*[[:alpha:]](-?[[:alnum:]])+\.[[:alpha:]]{2,}",
+                smali_dir,
+            ],
+            stdout=PIPE,
+            stderr=PIPE,
+        )
         grep, _ = proc.communicate()
         for line in safe_str(grep).splitlines():
             file_path, line = line.split(":", 1)
 
             if "const-string" in line or "Ljava/lang/String;" in line:
-                data = line.split("\"", 1)[1].split("\"")[0]
+                data = line.split('"', 1)[1].split('"')[0]
                 data_low = data.lower()
                 data_split = data.split(".")
                 if data in file_list:
@@ -287,20 +311,33 @@ class APKaye(ServiceBase):
                     continue
                 elif data.startswith("/"):
                     continue
-                elif data_low.startswith("http://") or data_low.startswith('ftp://') or data_low.startswith('https://'):
+                elif data_low.startswith("http://") or data_low.startswith("ftp://") or data_low.startswith("https://"):
                     url_list.append(data)
                 elif len(data_split[0]) < len(data_split[-1]) and len(data_split[-1]) > 3:
                     continue
-                elif data.startswith('android.') and data_low != data:
+                elif data.startswith("android.") and data_low != data:
                     continue
                 elif "/" in data and "." in data and data.index("/") < data.index("."):
                     continue
                 elif " " in data:
                     continue
-                elif data_split[0] in ['com', 'org', 'net', 'java']:
+                elif data_split[0] in ["com", "org", "net", "java"]:
                     continue
-                elif data_split[-1].lower() in ['so', 'properties', 'zip', 'read', 'id', 'store',
-                                                'name', 'author', 'sh', 'soccer', 'fitness', 'news', 'video']:
+                elif data_split[-1].lower() in [
+                    "so",
+                    "properties",
+                    "zip",
+                    "read",
+                    "id",
+                    "store",
+                    "name",
+                    "author",
+                    "sh",
+                    "soccer",
+                    "fitness",
+                    "news",
+                    "video",
+                ]:
                     continue
                 elif data.endswith("."):
                     continue
@@ -348,7 +385,7 @@ class APKaye(ServiceBase):
                     count += 1
                     if count <= 20:
                         res_url.add_line(url)
-                    res_url.add_tag('network.static.uri', url)
+                    res_url.add_tag("network.static.uri", url)
                 if count > 20:
                     res_url.add_line(f"and {count - 20} more...")
 
@@ -359,7 +396,7 @@ class APKaye(ServiceBase):
                     count += 1
                     if count <= 20:
                         res_ip.add_line(ip)
-                    res_ip.add_tag('network.static.ip', ip)
+                    res_ip.add_tag("network.static.ip", ip)
                 if count > 20:
                     res_ip.add_line(f"and {count - 20} more...")
 
@@ -370,7 +407,7 @@ class APKaye(ServiceBase):
                     count += 1
                     if count <= 20:
                         res_domain.add_line(domain)
-                    res_domain.add_tag('network.static.domain', domain)
+                    res_domain.add_tag("network.static.domain", domain)
                 if count > 20:
                     res_domain.add_line(f"and {count - 20} more...")
 
@@ -381,7 +418,7 @@ class APKaye(ServiceBase):
                     count += 1
                     if count <= 20:
                         res_email.add_line(email)
-                    res_email.add_tag('network.email.address', email)
+                    res_email.add_tag("network.email.address", email)
                 if count > 20:
                     res_email.add_line(f"and {count - 20} more...")
 
@@ -391,8 +428,11 @@ class APKaye(ServiceBase):
         self.validate_certs(apktool_out_dir, result)
 
     def run_apktool(self, apk: str, target_dir: str, work_dir: str, result: Result):
-        apktool = Popen(["java", "-jar", self.apktool, "--frame-path", work_dir, "--output", target_dir, "d", apk],
-                        stdout=PIPE, stderr=PIPE)
+        apktool = Popen(
+            ["java", "-jar", self.apktool, "--frame-path", work_dir, "--output", target_dir, "d", apk],
+            stdout=PIPE,
+            stderr=PIPE,
+        )
         _ = apktool.communicate()
         if os.path.exists(target_dir):
             self.analyse_apktool_output(target_dir, result)
@@ -406,29 +446,28 @@ class APKaye(ServiceBase):
         dex = os.path.join(self.working_directory, "classes.dex")
         self.get_dex(apk_file, dex)
         if os.path.exists(dex):
-            d2j = Popen([self.dex2jar, "--output", target, dex],
-                        stdout=PIPE, stderr=PIPE)
+            d2j = Popen([self.dex2jar, "--output", target, dex], stdout=PIPE, stderr=PIPE)
             d2j.communicate()
             if os.path.exists(target) and request.add_extracted(
-                    target, os.path.basename(target),
-                    "Dex2Jar output JAR file", safelist_interface=self.api_interface):
-
+                target, os.path.basename(target), "Dex2Jar output JAR file", safelist_interface=self.api_interface
+            ):
                 res_sec = ResultSection("Classes.dex file was recompiled as a JAR and re-submitted for analysis")
                 res_sec.add_line(f"JAR file resubmitted as: {os.path.basename(target)}")
 
                 result.add_section(res_sec)
             else:
                 result.add_section(
-                    ResultSection("Unable to resubmit Dex file as a Jar because Dex version is incompatible."))
+                    ResultSection("Unable to resubmit Dex file as a Jar because Dex version is incompatible.")
+                )
 
     def run_appt(self, args):
         cmd_line = [self.aapt]
         cmd_line.extend(args)
-        proc = Popen(cmd_line, stdout=PIPE, stderr=PIPE, encoding='ISO-8859-1')
+        proc = Popen(cmd_line, stdout=PIPE, stderr=PIPE, encoding="ISO-8859-1")
         return proc.communicate()
 
     def run_badging_analysis(self, apk_file: str, result: Result):
-        badging_args = ['d', 'badging', apk_file]
+        badging_args = ["d", "badging", apk_file]
         badging, errors = self.run_appt(badging_args)
         if not badging:
             return
@@ -446,31 +485,31 @@ class APKaye(ServiceBase):
                 # pkg_version must be a string here
                 if pkg_version:
                     res_badging.add_line(f"Package: {pkg_name} v.{pkg_version}")
-                    res_badging.add_tag('file.apk.app.version', pkg_version)
+                    res_badging.add_tag("file.apk.app.version", pkg_version)
                 else:
                     res_badging.add_line(f"Package: {pkg_name} - No version supplied")
 
-                res_badging.add_tag('file.apk.pkg_name', pkg_name)
+                res_badging.add_tag("file.apk.pkg_name", pkg_name)
 
             if line.startswith("sdkVersion:"):
                 min_sdk = line.split(":'")[1][:-1]
                 res_badging.add_line(f"Min SDK: {min_sdk}")
-                res_badging.add_tag('file.apk.sdk.min', min_sdk)
+                res_badging.add_tag("file.apk.sdk.min", min_sdk)
 
             if line.startswith("targetSdkVersion:"):
                 target_sdk = line.split(":'")[1][:-1]
                 res_badging.add_line(f"Target SDK: {target_sdk}")
-                res_badging.add_tag('file.apk.sdk.target', target_sdk)
+                res_badging.add_tag("file.apk.sdk.target", target_sdk)
 
             if line.startswith("application-label:"):
                 label = line.split(":'")[1][:-1]
                 res_badging.add_line(f"Default Label: {label}")
-                res_badging.add_tag('file.apk.app.label', label)
+                res_badging.add_tag("file.apk.app.label", label)
 
             if line.startswith("launchable-activity:"):
                 launch = line.split("name='")[1].split("'")[0]
                 res_badging.add_line(f"Launchable activity: {launch}")
-                res_badging.add_tag('file.apk.activity', launch)
+                res_badging.add_tag("file.apk.activity", launch)
 
             if line.startswith("uses-library-not-required:"):
                 lib = line.split(":'")[1][:-1]
@@ -492,20 +531,18 @@ class APKaye(ServiceBase):
                 if feature not in features:
                     features.append(feature)
 
-        if pkg_version is not None and pkg_version != '':
+        if pkg_version is not None and pkg_version != "":
             pkg_version = int(pkg_version)
             if pkg_version < 15:
-                ResultSection("Package version is suspiciously low", parent=res_badging,
-                              heuristic=Heuristic(17))
+                ResultSection("Package version is suspiciously low", parent=res_badging, heuristic=Heuristic(17))
             elif pkg_version > 999999999:
-                ResultSection("Package version is suspiciously high", parent=res_badging,
-                              heuristic=Heuristic(17))
+                ResultSection("Package version is suspiciously high", parent=res_badging, heuristic=Heuristic(17))
 
         if libs:
             res_lib = ResultSection("Libraries used", parent=res_badging)
             for lib in libs:
                 res_lib.add_line(lib)
-                res_lib.add_tag('file.apk.used_library', lib)
+                res_lib.add_tag("file.apk.used_library", lib)
 
         if permissions:
             res_permissions = ResultSection("Permissions used", parent=res_badging)
@@ -513,74 +550,87 @@ class APKaye(ServiceBase):
             unknown_permissions = []
             for perm in permissions:
                 if perm in ALL_ANDROID_PERMISSIONS:
-                    if 'dangerous' in ALL_ANDROID_PERMISSIONS[perm]:
+                    if "dangerous" in ALL_ANDROID_PERMISSIONS[perm]:
                         dangerous_permissions.append(perm)
                     else:
                         res_permissions.add_line(perm)
-                        res_permissions.add_tag('file.apk.permission', perm)
+                        res_permissions.add_tag("file.apk.permission", perm)
                 else:
                     unknown_permissions.append(perm)
 
             if len(set(permissions)) < len(permissions):
-                ResultSection("Some permissions are defined more then once", parent=res_badging,
-                              heuristic=Heuristic(18))
+                ResultSection(
+                    "Some permissions are defined more then once", parent=res_badging, heuristic=Heuristic(18)
+                )
 
             if dangerous_permissions:
-                res_dangerous_perm = ResultSection("Dangerous permissions used", parent=res_badging,
-                                                   heuristic=Heuristic(4))
+                res_dangerous_perm = ResultSection(
+                    "Dangerous permissions used", parent=res_badging, heuristic=Heuristic(4)
+                )
                 for perm in dangerous_permissions:
                     res_dangerous_perm.add_line(perm)
-                    res_dangerous_perm.add_tag('file.apk.permission', perm)
+                    res_dangerous_perm.add_tag("file.apk.permission", perm)
 
             if unknown_permissions:
-                res_unknown_perm = ResultSection("Unknown permissions used", parent=res_badging,
-                                                 heuristic=Heuristic(5))
+                res_unknown_perm = ResultSection("Unknown permissions used", parent=res_badging, heuristic=Heuristic(5))
                 for perm in unknown_permissions:
                     res_unknown_perm.add_line(perm)
-                    res_unknown_perm.add_tag('file.apk.permission', perm)
+                    res_unknown_perm.add_tag("file.apk.permission", perm)
 
         if features:
             res_features = ResultSection("Features used", parent=res_badging)
             for feature in features:
                 res_features.add_line(feature)
-                res_features.add_tag('file.apk.feature', feature)
+                res_features.add_tag("file.apk.feature", feature)
 
         if components:
             res_components = ResultSection("Components provided", parent=res_badging)
             for component in components:
                 res_components.add_line(component)
-                res_components.add_tag('file.apk.provides_component', component)
+                res_components.add_tag("file.apk.provides_component", component)
 
         result.add_section(res_badging)
 
     def run_strings_analysis(self, apk_file, result: Result):
-        string_args = ['d', 'strings', apk_file]
+        string_args = ["d", "strings", apk_file]
         strings, _ = self.run_appt(string_args)
         if not strings or strings == "String pool is unitialized.\n":
-            ResultSection("No strings found in APK", body="This is highly unlikely and most-likely malicious.",
-                          parent=result, heuristic=Heuristic(6))
+            ResultSection(
+                "No strings found in APK",
+                body="This is highly unlikely and most-likely malicious.",
+                parent=result,
+                heuristic=Heuristic(6),
+            )
         else:
             res_strings = ResultSection("Strings Analysis", parent=result)
 
-            config_args = ['d', 'configurations', apk_file]
+            config_args = ["d", "configurations", apk_file]
             configs, _ = self.run_appt(config_args)
             languages = []
             for line in configs.splitlines():
                 config = line.upper()
                 if config in ISO_LOCALES:
                     languages.append(config)
-                    res_strings.add_tag('file.apk.locale', config)
+                    res_strings.add_tag("file.apk.locale", config)
 
             data_line = strings.split("\n", 1)[0]
             count = int(data_line.split(" entries")[0].rsplit(" ", 1)[1])
             styles = int(data_line.split(" styles")[0].rsplit(" ", 1)[1])
             if count < 50:
-                ResultSection("Low volume of strings, this is suspicious.", parent=res_strings,
-                              body_format=BODY_FORMAT.MEMORY_DUMP, body=safe_str(strings), heuristic=Heuristic(7))
+                ResultSection(
+                    "Low volume of strings, this is suspicious.",
+                    parent=res_strings,
+                    body_format=BODY_FORMAT.MEMORY_DUMP,
+                    body=safe_str(strings),
+                    heuristic=Heuristic(7),
+                )
 
             if len(languages) < 2:
-                ResultSection("This app is not built for multiple languages. This is unlikely.",
-                              parent=res_strings, heuristic=Heuristic(8))
+                ResultSection(
+                    "This app is not built for multiple languages. This is unlikely.",
+                    parent=res_strings,
+                    heuristic=Heuristic(8),
+                )
 
             res_strings.add_line(f"Total string count: {count}")
             res_strings.add_line(f"Total styles: {styles}")
