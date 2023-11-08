@@ -491,37 +491,37 @@ class APKaye(ServiceBase):
 
                 res_badging.add_tag("file.apk.pkg_name", pkg_name)
 
-            if line.startswith("sdkVersion:"):
+            elif line.startswith("sdkVersion:"):
                 min_sdk = line.split(":'")[1][:-1]
                 res_badging.add_line(f"Min SDK: {min_sdk}")
                 res_badging.add_tag("file.apk.sdk.min", min_sdk)
 
-            if line.startswith("targetSdkVersion:"):
+            elif line.startswith("targetSdkVersion:"):
                 target_sdk = line.split(":'")[1][:-1]
                 res_badging.add_line(f"Target SDK: {target_sdk}")
                 res_badging.add_tag("file.apk.sdk.target", target_sdk)
 
-            if line.startswith("application-label:"):
+            elif line.startswith("application-label:"):
                 label = line.split(":'")[1][:-1]
                 res_badging.add_line(f"Default Label: {label}")
                 res_badging.add_tag("file.apk.app.label", label)
 
-            if line.startswith("launchable-activity:"):
+            elif line.startswith("launchable-activity:"):
                 launch = line.split("name='")[1].split("'")[0]
                 res_badging.add_line(f"Launchable activity: {launch}")
                 res_badging.add_tag("file.apk.activity", launch)
 
-            if line.startswith("uses-library-not-required:"):
+            elif line.startswith("uses-library-not-required:"):
                 lib = line.split(":'")[1][:-1]
                 if lib not in libs:
                     libs.append(lib)
 
-            if line.startswith("uses-permission:") or line.startswith("uses-implied-permission:"):
+            elif line.startswith("uses-permission:") or line.startswith("uses-implied-permission:"):
                 perm = line.split("name='")[1].split("'")[0]
                 if perm not in permissions:
                     permissions.append(perm)
 
-            if line.startswith("provides-component:"):
+            elif line.startswith("provides-component:"):
                 component = line.split(":'")[1][:-1]
                 if component not in components:
                     components.append(component)
