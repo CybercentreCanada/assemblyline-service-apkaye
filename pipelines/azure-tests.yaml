@@ -12,10 +12,10 @@ jobs:
       matrix:
         Python3_9:
           python.version: "3.9"
-        #Python3_10:
-        #  python.version: "3.10"
-        #Python3_11:
-        #  python.version: "3.11"
+        Python3_10:
+         python.version: "3.10"
+        Python3_11:
+         python.version: "3.11"
 
     timeoutInMinutes: 10
 
@@ -25,15 +25,17 @@ jobs:
         inputs:
           versionSpec: "$(python.version)"
       - script: |
+          export APKTOOL_VERSION=2.9.3
+          export DEX2JAR_VERSION=2.4
           sudo apt-get update
           sudo apt-get install -yy build-essential libffi-dev libfuzzy-dev python3-dev libimage-exiftool-perl openjdk-8-jre-headless java-common libc6-i386 lib32z1 lib32gcc1 unzip wget
           sudo mkdir -p /usr/share/man/man1
           sudo mkdir -p /opt/al_support
-          sudo wget -O /opt/al_support/apktool.jar https://bitbucket.org/iBotPeaches/apktool/downloads/apktool_2.4.0.jar
-          sudo wget -O /tmp/dex2jar.zip https://github.com/pxb1988/dex2jar/releases/download/2.0/dex-tools-2.0.zip
-          sudo wget -O /tmp/aapt2.jar https://dl.google.com/dl/android/maven2/com/android/tools/build/aapt2/3.5.1-5435860/aapt2-3.5.1-5435860-linux.jar
+          sudo wget -O /opt/al_support/apktool.jar https://github.com/iBotPeaches/Apktool/releases/download/$APKTOOL_VERSION/apktool_$APKTOOL_VERSION.jar
+          sudo wget -O /tmp/dex2jar.zip https://github.com/pxb1988/dex2jar/releases/download/v$DEX2JAR_VERSION/dex2jar-$DEX2JAR_VERSION.zip
+          sudo wget -O /tmp/aapt2.jar https://dl.google.com/dl/android/maven2/com/android/tools/build/aapt2/7.3.0-8691043/aapt2-7.3.0-8691043-linux.jar
           sudo unzip -o /tmp/dex2jar.zip -d /opt/al_support
-          sudo chmod +x /opt/al_support/dex2jar-2.0/*.sh
+          sudo chmod +x /opt/al_support/dex2jar-$DEX2JAR_VERSION/*.sh
           sudo unzip -o /tmp/aapt2.jar -d /opt/al_support/aapt2
           sudo env "PATH=$PATH" python -m pip install -U --no-cache-dir assemblyline assemblyline_v4_service
           [ -f $(pwd)/requirements.txt ] && sudo env "PATH=$PATH" python -m pip install -U --no-cache-dir -r $(pwd)/requirements.txt
