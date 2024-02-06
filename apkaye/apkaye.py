@@ -1,7 +1,7 @@
 import hashlib
 import os
 import time
-from subprocess import PIPE, Popen, call
+from subprocess import PIPE, Popen, call, run
 
 from apkaye.static import ALL_ANDROID_PERMISSIONS, ISO_LOCALES
 from assemblyline.common import forge
@@ -11,24 +11,33 @@ from assemblyline_service_utilities.common.keytool_parse import certificate_chai
 from assemblyline_v4_service.common.base import ServiceBase
 from assemblyline_v4_service.common.result import BODY_FORMAT, Heuristic, Result, ResultSection
 
+AAPT_PATH = os.environ.get("AAPT_PATH", "/opt/al_support/aapt2")
+APKTOOL_PATH = os.environ.get("APKTOOL_PATH", "/opt/al_support/apktool.jar")
+DEX2JAR_PATH = os.environ.get("DEX2JAR_PATH", "/opt/al_support/dex-tools/d2j-dex2jar.sh")
+
 
 class APKaye(ServiceBase):
     def __init__(self, config=None):
         super(APKaye, self).__init__(config)
-        self.apktool = self.config.get("apktool_path", None)
-        self.dex2jar = self.config.get("dex2jar_path", None)
-        self.aapt = self.config.get("aapt_path", None)
+        self.aapt2_version = run([AAPT_PATH, "version"], capture_output=True).stderr.decode()[36:-1]
+        self.apktool_version = os.environ.get(
+            "APKTOOL_VERSION", run(["java", "-jar", APKTOOL_PATH, "-version"], capture_output=True).stderr.decode()
+        )
+        self.dex2jar_version = os.environ.get(
+            "DEX2JAR_VERSION",
+            run([DEX2JAR_PATH], capture_output=True).stderr.decode().split()[-1].split("-")[-1],
+        )
         self.identify = forge.get_identify(use_cache=os.environ.get("PRIVILEGED", "false").lower() == "true")
 
     def start(self):
-        if not os.path.isfile(self.apktool) or not os.path.isfile(self.dex2jar) or not os.path.isfile(self.aapt):
+        if not all(os.path.exists(f) for f in [AAPT_PATH, APKTOOL_PATH, DEX2JAR_PATH]):
             self.log.error(
                 "One or more of the service tools (APKTOOL, AAPT2, DEX2JAR) are missing. "
                 "The service will most likely fail."
             )
 
     def get_tool_version(self):
-        return "APKTOOL: 2.6.1 - D2J: 2.1 - AAPT2: 7.3.0-8691043"
+        return f"APKTOOL: {self.apktool_version} - D2J: {self.dex2jar_version} - AAPT2: {self.aapt2_version}"
 
     def execute(self, request):
         result = Result()
@@ -429,7 +438,7 @@ class APKaye(ServiceBase):
 
     def run_apktool(self, apk: str, target_dir: str, work_dir: str, result: Result):
         apktool = Popen(
-            ["java", "-jar", self.apktool, "--frame-path", work_dir, "--output", target_dir, "d", apk],
+            ["java", "-jar", APKTOOL_PATH, "--frame-path", work_dir, "--output", target_dir, "d", apk],
             stdout=PIPE,
             stderr=PIPE,
         )
@@ -446,7 +455,7 @@ class APKaye(ServiceBase):
         dex = os.path.join(self.working_directory, "classes.dex")
         self.get_dex(apk_file, dex)
         if os.path.exists(dex):
-            d2j = Popen([self.dex2jar, "--output", target, dex], stdout=PIPE, stderr=PIPE)
+            d2j = Popen([DEX2JAR_PATH, "--output", target, dex], stdout=PIPE, stderr=PIPE)
             d2j.communicate()
             if os.path.exists(target) and request.add_extracted(
                 target, os.path.basename(target), "Dex2Jar output JAR file", safelist_interface=self.api_interface
@@ -461,7 +470,7 @@ class APKaye(ServiceBase):
                 )
 
     def run_appt(self, args):
-        cmd_line = [self.aapt]
+        cmd_line = [AAPT_PATH]
         cmd_line.extend(args)
         proc = Popen(cmd_line, stdout=PIPE, stderr=PIPE, encoding="ISO-8859-1")
         return proc.communicate()
