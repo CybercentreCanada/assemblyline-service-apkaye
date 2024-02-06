@@ -3,6 +3,7 @@ FROM cccs/assemblyline-v4-service-base:$branch
 
 ENV SERVICE_PATH apkaye.apkaye.APKaye
 ENV APKTOOL_VERSION 2.9.3
+ENV DEX2JAR_VERSION 2.4
 
 USER root
 
@@ -16,11 +17,11 @@ RUN mkdir -p /opt/al_support
 
 # Download the support files from Amazon S3
 RUN wget -O /opt/al_support/apktool.jar https://github.com/iBotPeaches/Apktool/releases/download/$APKTOOL_VERSION/apktool_$APKTOOL_VERSION.jar
-RUN wget -O /tmp/dex2jar.zip https://github.com/pxb1988/dex2jar/releases/download/v2.1/dex2jar-2.1.zip
+RUN wget -O /tmp/dex2jar.zip https://github.com/pxb1988/dex2jar/releases/download/v$DEX2JAR_VERSION/dex2jar-$DEX2JAR_VERSION.zip
 RUN wget -O /tmp/aapt2.jar https://dl.google.com/dl/android/maven2/com/android/tools/build/aapt2/7.3.0-8691043/aapt2-7.3.0-8691043-linux.jar
 
 RUN unzip -o /tmp/dex2jar.zip -d /opt/al_support
-RUN chmod +x /opt/al_support/dex-tools-2.1/*.sh
+RUN chmod +x /opt/al_support/dex-tools-$DEX2JAR_VERSION/*.sh
 
 RUN unzip -o /tmp/aapt2.jar -d /opt/al_support/aapt2
 
