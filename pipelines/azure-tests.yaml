@@ -28,7 +28,7 @@ jobs:
           set -exv  # Echo commands before they are run
           export APKTOOL_VERSION=2.9.3
           export DEX2JAR_VERSION=2.4
-          export AAPT2_VERSION 8.2.2-10154469
+          export AAPT2_VERSION=8.2.2-10154469
           sudo apt-get update
           sudo apt-get install -yy build-essential libffi-dev libfuzzy-dev python3-dev libimage-exiftool-perl openjdk-8-jre-headless java-common libc6-i386 lib32z1 lib32gcc1 unzip wget
           sudo mkdir -p /usr/share/man/man1
