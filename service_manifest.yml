@@ -18,11 +18,6 @@ enabled: true
 is_external: false
 licence_count: 0
 
-config:
-  apktool_path: /opt/al_support/apktool.jar
-  aapt_path: /opt/al_support/aapt2/aapt2
-  dex2jar_path: /opt/al_support/dex-tools-2.1/d2j-dex2jar.sh
-
 submission_params:
   - default: false
     name: resubmit_apk_as_jar
