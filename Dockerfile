@@ -12,7 +12,7 @@ USER root
 RUN mkdir -p /usr/share/man/man1
 
 # Get required apt packages
-RUN apt-get update && apt-get install -y default-jre-headless java-common libc6-i386 lib32z1 lib32gcc1 unzip wget && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y default-jre-headless java-common libc6-i386 lib32z1 lib32gcc-s1 unzip wget && rm -rf /var/lib/apt/lists/*
 
 COPY setup_support.sh /tmp/setup_support.sh
 RUN chmod +x /tmp/setup_support.sh && . /tmp/setup_support.sh
