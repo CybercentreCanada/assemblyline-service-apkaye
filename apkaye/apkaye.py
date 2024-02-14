@@ -190,7 +190,7 @@ class APKaye(ServiceBase):
                     elif "executable/linux" in file_type:
                         executables.append(file_path.replace(apktool_out_dir, ""))
                     elif "android/apk" in file_type:
-                        executables.append(file_path.replace(apktool_out_dir, ""))
+                        apks.append(file_path.replace(apktool_out_dir, ""))
 
         if scripts:
             res_script = ResultSection("Shell script(s) found inside APK", parent=result, heuristic=Heuristic(1))
