@@ -63,7 +63,7 @@ heuristics:
 
   - heur_id: 6
     name: No strings in APK
-    score: 500
+    score: 100
     filetype: android/apk
     description: There are absolutely no strings provided in this APK. This is highly unlikely for a normal APK.
 
@@ -81,7 +81,7 @@ heuristics:
 
   - heur_id: 9
     name: Unsigned APK
-    score: 500
+    score: 100
     filetype: android/apk
     description: This APK is not signed. Signing an APK is required to publish on Google Play.
 
@@ -130,7 +130,7 @@ heuristics:
 
   - heur_id: 17
     name: Package version is unlikely
-    score: 500
+    score: 100
     filetype: android/apk
     description: The package version is either suspiciously low or suspiciously high.
 
