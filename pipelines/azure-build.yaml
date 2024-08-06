@@ -29,4 +29,6 @@ resources:
 extends:
   template: stages/deploy-service.yaml@PipelineTemplates
   parameters:
+    labels:
+      CLASSIFICATION: UNCLASSIFIED
     samples_repo: unittest-samples
