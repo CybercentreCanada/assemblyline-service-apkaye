@@ -2,12 +2,6 @@ name: tests
 
 variables:
   - group: unittest-samples
-  - name: APKTOOL_VERSION
-    value: "2.9.3"
-  - name: DEX2JAR_VERSION
-    value: "2.4"
-  - name: AAPT2_VERSION
-    value: "8.2.2-10154469"
 
 trigger: ["*"]
 pr: ["*"]
@@ -35,3 +29,7 @@ extends:
   parameters:
     samples_repo: unittest-samples
     test_container: "false"
+    test_env:
+      APKTOOL_VERSION: "2.9.3"
+      DEX2JAR_VERSION: "2.4"
+      AAPT2_VERSION: "8.2.2-10154469"
