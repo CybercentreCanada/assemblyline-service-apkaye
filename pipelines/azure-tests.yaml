@@ -27,6 +27,10 @@ resources:
 extends:
   template: stages/test-service.yaml@PipelineTemplates
   parameters:
+    python_versions:
+      - "3.9"
+      - "3.10"
+      - "3.11"
     samples_repo: unittest-samples
     test_container: "false"
     test_env:
