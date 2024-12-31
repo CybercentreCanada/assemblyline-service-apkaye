@@ -1,13 +1,7 @@
-build-essential
-openjdk-8-jre-headless
+default-jre-headless
 java-common
 libc6-i386
-libffi-dev
-libfuzzy-dev
-libimage-exiftool-perl
 lib32z1
-lib32gcc1
 lib32gcc-s1
-python3-dev
 unzip
 wget
