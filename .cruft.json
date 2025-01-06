@@ -8,15 +8,15 @@
       "__svc_name": "apkaye",
       "__repository": "assemblyline-service-apkaye",
       "__pkg_name": "apkaye",
-      "__class_name": "Apkaye",
       "short_description": "This Assemblyline service analyzes Android APKs by decompilation and inspection.",
-      "short_description_fr": "Ce service d'Assemblyline analyse les APK Android par décompilation et inspection.",
+      "short_description_fr": "Ce service d'Assemblyline analyse les APK Android par d\u00e9compilation et inspection.",
       "stage": "CORE",
       "category": "Static Analysis",
       "org_name_full": "CybercentreCanada",
       "org_name_short": "cccs",
       "license": "mit",
-      "_template": "https://github.com/CybercentreCanada/assemblyline-service-template.git"
+      "_template": "https://github.com/CybercentreCanada/assemblyline-service-template.git",
+      "class_name": "Apkaye"
     }
   },
   "directory": null
