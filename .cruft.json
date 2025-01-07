@@ -8,7 +8,7 @@
       "__svc_name": "apkaye",
       "__repository": "assemblyline-service-apkaye",
       "__pkg_name": "apkaye",
-      "class_name": "Apkaye",
+      "class_name": "APKaye",
       "short_description": "This Assemblyline service analyzes Android APKs by decompilation and inspection.",
       "short_description_fr": "Ce service d'Assemblyline analyse les APK Android par décompilation et inspection.",
       "stage": "CORE",
